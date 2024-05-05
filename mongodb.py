@@ -49,7 +49,7 @@ class InsertBatch:
             if len(self.datas) == self.batch_size:
                 self.db.insert_batch(self.datas)
                 self.datas=[]
-        self.db.insert_batch(self.datas)
+        self.add_batch_flush()
         
     def add_to_batch_item(self, item):
         #   通常のデータを受け入れるメソッド
@@ -68,7 +68,7 @@ class InsertBatch:
             if len(self.datas) == self.batch_size:
                 self.db.insert_upsert(self.datas, upsert_key)
                 self.datas=[]
-        self.db.insert_upsert(self.datas, upsert_key)
+        self.add_upsert_flush(self.datas, upsert_key)
     
     def add_to_upsert_item(self, item, upsert_key):
         self.datas.append(item)

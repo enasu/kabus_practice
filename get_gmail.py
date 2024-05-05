@@ -57,16 +57,44 @@ def datetime_to_unixtime(date_str):
     unixtime = int(dt_utc.replace(tzinfo=timezone.utc).timestamp())
     return unixtime
 
-class BatchEmailBody:
+class BatchGmai:
     def __init__(self, creds, query, batch_size=100):
         self.service = build('gmail', 'v1', credentials=creds)
-        self.results = self.service.users().messages().list(userId='me', q=query).execute()
+        self.query = query
         self.messages = self.results.get('messages', [])
         self.batch_size =batch_size
         self.datas = []
         print(f'class生成時のemailの件数:{len(self.messages)}')
+        
+    def exec(self):
+        '''
+        gmail api は デフォルトで100件、最大500件の取得しかできないので
+        nextPageToken を利用する
+        '''
+        self.results = self.service.users().messages().list(userId='me', q=self.query).execute()
+        
+        while True:
+            self.get_results()
+            # nextPageTokenが存在するか確認し、あれば次のページのデータを取得
+            if 'nextPageToken' in self.results:
+                page_token = self.results['nextPageToken']
+                self.results = self.service.users().messages().list(userId='me', q=self.query, pageToken=page_token).execute()
+                self.get_results()
+            else:
+                break
+            
+    def get_results(self):
+        if 'messages' in self.results:
+            messages = self.results.get('messages', [])
+            for message in messages:
+                yield self.get_email_body(message['id'])
+        else:
+            print('No messages found.')
+            return []
 
     def generate_body(self):
+        # gmail apiが100件づつ処理になるので generate は必要なくなった
+        # 後学のためしばらく残す
         if not self.messages:
             print('No messages found.')
             return []
@@ -75,6 +103,8 @@ class BatchEmailBody:
             yield self.get_email_body(message['id'])
 
     def add_to_batch(self, iter):
+        # gmail apiが100件づつ処理になるので generate は必要なくなった
+        # 後学のためしばらく残す
         for body in iter:
             self.datas.append(body)
             if len(self.datas) == self.batch_size:
@@ -98,8 +128,8 @@ class BatchEmailBody:
                     body_content['html'] = decoded_data
 
         if 'html' in body_content:
-            return self.parse_email_content(body_content['html'], message_id), \
-                {'gmail_id': message_id, 'html': body_content['html']}    # データ切出し(上の行）と生のhtmlを返す
+            return self.parse_email_content(body_content['html'], message_id) #, \
+                #{'gmail_id': message_id, 'html': body_content['html']}    # データ切出し(上の行）と生のhtmlを返す
                 # key 'gmail_id` は upsert_keyに利用するため def parse_email_contentと合わせた
                 
     def parse_email_content(self, html_content, message_id):
@@ -151,6 +181,8 @@ def time_it(func):
 
 @time_it
 def exec():
+    #  get_eamil_bodyで htmlも取得することを前提に記載
+    #   for文でこの関数内でイテレータから取り出している
     creds = authenticate()
     db_name = 'stock_kabu'
     db_orders = MongoDBManager(db_name, 'orders_on_gmail')
@@ -163,7 +195,7 @@ def exec():
     query = f'from:support@kabu.com subject:"【auKabucom】約定通知 " after:{after} before:{before}'
     batch_method_orders = InsertBatch(db_orders)
     batch_method_html = InsertBatch(db_html)
-    get_iter = BatchEmailBody(creds, query)
+    get_iter = BatchGmai(creds, query)
     body_iter = get_iter.generate_body()
     #   イテレータから　情報を取り出す処理
     #       複数データをイテレータでとりだすため一旦取り出してデータとして渡す必要がある
@@ -178,10 +210,11 @@ def exec():
 @time_it
 def exec2():
     # get_iter.genereate_body() で複数のデータを処理しないように変更
+    # 通常のイテレータ処理と考えている
     creds = authenticate()
     db_name = 'stock_kabu'
     db_orders = MongoDBManager(db_name, 'orders_on_gmail')
-    db_html = MongoDBManager(db_name, 'orders_html')
+
     # 期間指定
     start_datetime = '2024/01/24 00:00:00'
     end_datetime = '2024/05/03 15:30:00'
@@ -189,19 +222,12 @@ def exec2():
     before = datetime_to_unixtime(end_datetime)
     query = f'from:support@kabu.com subject:"【auKabucom】約定通知 " after:{after} before:{before}'
     batch_method_orders = InsertBatch(db_orders)
-    batch_method_html = InsertBatch(db_html)
+
     get_iter = BatchEmailBody(creds, query)
     body_iter = get_iter.generate_body()
-    #   イテレータから　情報を取り出す処理
-    #       複数データをイテレータでとりだすため一旦取り出してデータとして渡す必要がある
-    for item_list in body_iter:
-        batch_method_orders.add_to_batch_item(item_list[0])
-        batch_method_html.add_to_batch_item(item_list[1])
-    #   batch_size に満たないデータが入っているときの処理
-    #       イテレータとして渡していないのでここで事後処理が必要
-    batch_method_orders.add_batch_flush()
-    batch_method_html.add_batch_flush()
+    #   イテレータを直接渡す
+    batch_method_orders.add_to_batch_iter(body_iter)
 
 
 if __name__ == '__main__':
-    exec()
+    exec2()

@@ -43,6 +43,7 @@ class InsertBatch:
         
     def add_to_batch_iter(self, iter):
         #   イテレーターを受け入れるメソッド
+        #       この場合呼び出しは iterをそのまま引数に入れれば良く for 文は事前に必要ない
         for body in iter:
             self.datas.append(body)
             if len(self.datas) == self.batch_size:
@@ -56,7 +57,10 @@ class InsertBatch:
         if len(self.datas) == self.batch_size:
             self.db.insert_batch(self.datas)
             self.datas=[]
-        self.db.insert_batch(self.datas)
+
+    def add_batch_flush(self):
+        if self.datas:
+            self.db.insert_batch(self.datas)
     
     def add_to_upsert_iter(self, iter, upsert_key):
         for body in iter:
@@ -71,41 +75,7 @@ class InsertBatch:
         if len(self.datas) == self.batch_size:
             self.db.insert_upsert(self.datas, upsert_key)
             self.datas=[]
-        self.db.insert_upsert(self.datas, upsert_key)
 
-
-class AddTwoBatch:
-    #   htmlの生データを内容を抽出したデータと別に残したいと考えたため
-    #   命令文で イテレータから情報を取り出すため現状で使わないかも
-    def __init__(self, db1,db2, batch_size=100):
-        self.db1 = db1
-        self.db2 = db2
-        self.datas1 = []
-        self.datas2 = []
-        self.batch_size = batch_size
-        
-    def add_to_batch(self, iter):
-        for body in iter:
-            pdb.set_trace()
-            self.datas1.append(body[0])
-            self.datas2.append(body[1])
-            if len(self.datas1) == self.batch_size:
-                self.db1.insert_batch(self.datas1)
-                self.datas1=[]
-                self.db2.insert_batch(self.datas2)
-                self.datas2=[]
-        self.db1.insert_batch(self.datas1)
-        self.db2.insert_batch(self.datas2)
-        
-    def add_to_upsert(self, iter, upsert_key):
-        #   元は同じデータなので同じupsert_keyと考えている
-        for body in iter:
-            self.datas1.append(body[0])
-            self.datas2.append(body[1])
-            if len(self.datas1) == self.batch_size:
-                self.db1.insert_upsert(self.datas1, upsert_key)
-                self.datas1=[]
-                self.db2.insert_upsert(self.datas2, upsert_key)
-                self.datas2=[]
-        self.db1.insert_upsert(self.datas1, upsert_key)
-        self.db2.insert_upsert(self.datas2, upsert_key)
+    def add_upsert_flush(self, upsert_key):
+        if self.datas:
+            self.db.insert_upsert(self.datas, upsert_key)

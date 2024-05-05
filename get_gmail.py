@@ -9,7 +9,7 @@ from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from mongodb import MongoDBManager, InsertBatch
-import pdb
+import time
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 
@@ -22,14 +22,27 @@ def authenticate():
     if os.path.exists('token.pickle'):
         with open('token.pickle', 'rb') as token:
             creds = pickle.load(token)
-    # トークンがない場合、ユーザー認証を行う
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                '../data/credentials.json', SCOPES)
-            creds = flow.run_local_server(port=9990)    # docker container から実行する為 defaultは port=0
+    try:
+        # トークンがない場合、ユーザー認証を行う
+        if not creds or not creds.valid:
+            if creds and creds.expired and creds.refresh_token:
+                creds.refresh(Request())
+            else:
+                flow = InstalledAppFlow.from_client_secrets_file(
+                    '../data/credentials.json', SCOPES)
+                creds = flow.run_local_server(port=9990)    # docker container から実行する為 defaultは port=0
+            # 新しいトークンを保存
+            with open('token.pickle', 'wb') as token:
+                pickle.dump(creds, token)
+    except Exception as e:
+        print(f"トークンのリフレッシュに失敗しました: {e}")
+        # 既存のトークンファイルが問題の原因かもしれないため削除
+        if os.path.exists('token.pickle'):
+            os.remove('token.pickle')
+        # 新しい認証プロセスを強制的に実行
+        flow = InstalledAppFlow.from_client_secrets_file(
+            '../data/credentials.json', SCOPES)
+        creds = flow.run_local_server(port=9990)
         # 新しいトークンを保存
         with open('token.pickle', 'wb') as token:
             pickle.dump(creds, token)
@@ -126,16 +139,25 @@ class BatchEmailBody:
                         data[key_value[0]] = key_value[1]
 
         return data
+    
+def time_it(func):
+    def wrapper(*args, **kwargs):
+        start_time = time.time()
+        result = func(*args, **kwargs)
+        end_time = time.time()
+        print(f"{func.__name__} の実行時間: {end_time - start_time:.6f} 秒")
+        return result
+    return wrapper
 
-
-if __name__ == '__main__':
+@time_it
+def exec():
     creds = authenticate()
     db_name = 'stock_kabu'
     db_orders = MongoDBManager(db_name, 'orders_on_gmail')
-    db_html = MongoDBManager(db_name, 'order_html')
+    db_html = MongoDBManager(db_name, 'orders_html')
     # 期間指定
-    start_datetime = '2024/04/26 14:41:00'
-    end_datetime = '2024/04/26 14:42:00'
+    start_datetime = '2024/01/24 00:00:00'
+    end_datetime = '2024/05/03 15:30:00'
     after = datetime_to_unixtime(start_datetime)
     before = datetime_to_unixtime(end_datetime)
     query = f'from:support@kabu.com subject:"【auKabucom】約定通知 " after:{after} before:{before}'
@@ -144,7 +166,42 @@ if __name__ == '__main__':
     get_iter = BatchEmailBody(creds, query)
     body_iter = get_iter.generate_body()
     #   イテレータから　情報を取り出す処理
+    #       複数データをイテレータでとりだすため一旦取り出してデータとして渡す必要がある
     for item_list in body_iter:
         batch_method_orders.add_to_batch_item(item_list[0])
         batch_method_html.add_to_batch_item(item_list[1])
+    #   batch_size に満たないデータが入っているときの処理
+    #       イテレータとして渡していないのでここで事後処理が必要
+    batch_method_orders.add_batch_flush()
+    batch_method_html.add_batch_flush()
+    
+@time_it
+def exec2():
+    # get_iter.genereate_body() で複数のデータを処理しないように変更
+    creds = authenticate()
+    db_name = 'stock_kabu'
+    db_orders = MongoDBManager(db_name, 'orders_on_gmail')
+    db_html = MongoDBManager(db_name, 'orders_html')
+    # 期間指定
+    start_datetime = '2024/01/24 00:00:00'
+    end_datetime = '2024/05/03 15:30:00'
+    after = datetime_to_unixtime(start_datetime)
+    before = datetime_to_unixtime(end_datetime)
+    query = f'from:support@kabu.com subject:"【auKabucom】約定通知 " after:{after} before:{before}'
+    batch_method_orders = InsertBatch(db_orders)
+    batch_method_html = InsertBatch(db_html)
+    get_iter = BatchEmailBody(creds, query)
+    body_iter = get_iter.generate_body()
+    #   イテレータから　情報を取り出す処理
+    #       複数データをイテレータでとりだすため一旦取り出してデータとして渡す必要がある
+    for item_list in body_iter:
+        batch_method_orders.add_to_batch_item(item_list[0])
+        batch_method_html.add_to_batch_item(item_list[1])
+    #   batch_size に満たないデータが入っているときの処理
+    #       イテレータとして渡していないのでここで事後処理が必要
+    batch_method_orders.add_batch_flush()
+    batch_method_html.add_batch_flush()
 
+
+if __name__ == '__main__':
+    exec()

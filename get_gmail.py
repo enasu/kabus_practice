@@ -1,7 +1,6 @@
 import os
 import sys
 import pickle
-import json
 import base64
 import re
 from datetime import datetime, timezone, timedelta
@@ -9,7 +8,8 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
-from .mongodb import MongoDBManager, BatchEmailBody
+from mongodb import MongoDBManager, InsertBatch
+import pdb
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 
@@ -29,7 +29,7 @@ def authenticate():
         else:
             flow = InstalledAppFlow.from_client_secrets_file(
                 '../data/credentials.json', SCOPES)
-            creds = flow.run_local_server(port=9990)
+            creds = flow.run_local_server(port=9990)    # docker container から実行する為 defaultは port=0
         # 新しいトークンを保存
         with open('token.pickle', 'wb') as token:
             pickle.dump(creds, token)
@@ -45,13 +45,13 @@ def datetime_to_unixtime(date_str):
     return unixtime
 
 class BatchEmailBody:
-    def __init__(self, creds, query, db, batch_size=100):
+    def __init__(self, creds, query, batch_size=100):
         self.service = build('gmail', 'v1', credentials=creds)
         self.results = self.service.users().messages().list(userId='me', q=query).execute()
         self.messages = self.results.get('messages', [])
-        self.db = db
         self.batch_size =batch_size
         self.datas = []
+        print(f'class生成時のemailの件数:{len(self.messages)}')
 
     def generate_body(self):
         if not self.messages:
@@ -59,33 +59,37 @@ class BatchEmailBody:
             return []
         # 各メッセージの本文を取得
         for message in self.messages:
-            yield self.add_to_batch(message)
+            yield self.get_email_body(message['id'])
 
-    def add_to_batch(self, message):
-        body = self.get_email_body(self.service, message['id'])
-        self.datas.append(body)
-        if len(self.datas) == self.batch_size:
-            self.db.insert_batch()
-        self.db.insert.finalize()
-        
+    def add_to_batch(self, iter):
+        for body in iter:
+            self.datas.append(body)
+            if len(self.datas) == self.batch_size:
+                self.db.insert_batch(self.datas)
+                self.datas=[]
+        self.db.insert_batch(self.datas)
+
     def get_email_body(self, message_id):
         message = self.service.users().messages().get(userId='me', id=message_id, format='full').execute()
         parts = message['payload'].get('parts', [])
         body_content = {}
+        #pdb.set_trace()        
         for part in parts:
             mime_type = part['mimeType']
             data = part['body'].get('data', '')
             if data:
                 decoded_data = base64.urlsafe_b64decode(data.encode('ASCII')).decode('utf-8')
-                if mime_type == 'text/html':
+                if mime_type == 'text/plain':
+                    body_content['text'] = decoded_data
+                elif mime_type == 'text/html':
                     body_content['html'] = decoded_data
 
-        #print(f"Message ID: {message_id}")
         if 'html' in body_content:
-            print("HTML Part: ", body_content['html'])
-            self.parse_email_content(body_content['html'], message_id)
-
-    def parse_email_content(html_content, message_id):
+            return self.parse_email_content(body_content['html'], message_id), \
+                {'gmail_id': message_id, 'html': body_content['html']}    # データ切出し(上の行）と生のhtmlを返す
+                # key 'gmail_id` は upsert_keyに利用するため def parse_email_contentと合わせた
+                
+    def parse_email_content(self, html_content, message_id):
         data = {}
         data['gmail_id'] = message_id
 
@@ -124,19 +128,23 @@ class BatchEmailBody:
         return data
 
 
-
-
 if __name__ == '__main__':
     creds = authenticate()
     db_name = 'stock_kabu'
-    db_collection = 'orders_on_gmail'
-    db_manager = MongoDBManager(db_name, db_collection)
+    db_orders = MongoDBManager(db_name, 'orders_on_gmail')
+    db_html = MongoDBManager(db_name, 'order_html')
     # 期間指定
     start_datetime = '2024/04/26 14:41:00'
     end_datetime = '2024/04/26 14:42:00'
     after = datetime_to_unixtime(start_datetime)
     before = datetime_to_unixtime(end_datetime)
     query = f'from:support@kabu.com subject:"【auKabucom】約定通知 " after:{after} before:{before}'
-    batch_body = BatchEmailBody(creds, query, db_manager)
-    batch_body.generate_body()      
+    batch_method_orders = InsertBatch(db_orders)
+    batch_method_html = InsertBatch(db_html)
+    get_iter = BatchEmailBody(creds, query)
+    body_iter = get_iter.generate_body()
+    #   イテレータから　情報を取り出す処理
+    for item_list in body_iter:
+        batch_method_orders.add_to_batch_item(item_list[0])
+        batch_method_html.add_to_batch_item(item_list[1])
 

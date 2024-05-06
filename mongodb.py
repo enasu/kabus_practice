@@ -1,6 +1,7 @@
 from pymongo import MongoClient
 import os
 import time
+import pandas as pd
 import pdb
 
 MONGO_USER = os.getenv('MONGO_USER')
@@ -33,7 +34,18 @@ class MongoDBManager:
             print(f'追加データはありません')
         else:
             print(f'追加データは以下の1件です:{self.collection.find().skip(end_count)}')
+            
+    def fetch_unique_field(self):
+        all_keys = set()
+        
+        for document in self.collection.find():
+            all_keys.update(document.keys())
 
+        print(all_keys)
+        
+    def convert_pandas(self):
+        documents = self.collection.find()
+        return pd.DataFrame(list(documents))
 
 class InsertBatch:
     def __init__(self, db, batch_size=100):

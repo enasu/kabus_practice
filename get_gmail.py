@@ -10,6 +10,7 @@ from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from mongodb import MongoDBManager, InsertBatch
 import time
+import pdb
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 
@@ -61,56 +62,36 @@ class BatchGmai:
     def __init__(self, creds, query, batch_size=100):
         self.service = build('gmail', 'v1', credentials=creds)
         self.query = query
-        self.messages = self.results.get('messages', [])
         self.batch_size =batch_size
         self.datas = []
-        print(f'class生成時のemailの件数:{len(self.messages)}')
         
     def exec(self):
         '''
         gmail api は デフォルトで100件、最大500件の取得しかできないので
         nextPageToken を利用する
         '''
-        self.results = self.service.users().messages().list(userId='me', q=self.query).execute()
-        
+        self.results = self.service.users().messages().list(userId='me', q=self.query).execute()  
         while True:
-            self.get_results()
+            if 'messages' in self.results:
+                messages = self.results.get('messages',[])
+                for message in messages:
+                    yield self.get_email_body(message['id'])
             # nextPageTokenが存在するか確認し、あれば次のページのデータを取得
             if 'nextPageToken' in self.results:
                 page_token = self.results['nextPageToken']
                 self.results = self.service.users().messages().list(userId='me', q=self.query, pageToken=page_token).execute()
-                self.get_results()
+                if 'messages' in self.results:
+                    messages = self.results.get('messages',[])
+                    for message in messages:
+                        yield self.get_email_body(message['id'])
             else:
                 break
             
-    def get_results(self):
-        if 'messages' in self.results:
+    def generate_results(self):
+        #   generater これを上の式に入れるとうまく動かない
             messages = self.results.get('messages', [])
             for message in messages:
                 yield self.get_email_body(message['id'])
-        else:
-            print('No messages found.')
-            return []
-
-    def generate_body(self):
-        # gmail apiが100件づつ処理になるので generate は必要なくなった
-        # 後学のためしばらく残す
-        if not self.messages:
-            print('No messages found.')
-            return []
-        # 各メッセージの本文を取得
-        for message in self.messages:
-            yield self.get_email_body(message['id'])
-
-    def add_to_batch(self, iter):
-        # gmail apiが100件づつ処理になるので generate は必要なくなった
-        # 後学のためしばらく残す
-        for body in iter:
-            self.datas.append(body)
-            if len(self.datas) == self.batch_size:
-                self.db.insert_batch(self.datas)
-                self.datas=[]
-        self.db.insert_batch(self.datas)
 
     def get_email_body(self, message_id):
         message = self.service.users().messages().get(userId='me', id=message_id, format='full').execute()
@@ -128,8 +109,8 @@ class BatchGmai:
                     body_content['html'] = decoded_data
 
         if 'html' in body_content:
-            return self.parse_email_content(body_content['html'], message_id) #, \
-                #{'gmail_id': message_id, 'html': body_content['html']}    # データ切出し(上の行）と生のhtmlを返す
+            return self.parse_email_content(body_content['html'], message_id) , \
+                {'gmail_id': message_id, 'html': body_content['html']}    # データ切出し(上の行）と生のhtmlを返す
                 # key 'gmail_id` は upsert_keyに利用するため def parse_email_contentと合わせた
                 
     def parse_email_content(self, html_content, message_id):
@@ -196,12 +177,12 @@ def exec():
     batch_method_orders = InsertBatch(db_orders)
     batch_method_html = InsertBatch(db_html)
     get_iter = BatchGmai(creds, query)
-    body_iter = get_iter.generate_body()
+    item_iter = get_iter.exec()
     #   イテレータから　情報を取り出す処理
     #       複数データをイテレータでとりだすため一旦取り出してデータとして渡す必要がある
-    for item_list in body_iter:
-        batch_method_orders.add_to_batch_item(item_list[0])
-        batch_method_html.add_to_batch_item(item_list[1])
+    for item_tuple in item_iter:
+        batch_method_orders.add_to_batch_item(item_tuple[0])
+        batch_method_html.add_to_batch_item(item_tuple[1])
     #   batch_size に満たないデータが入っているときの処理
     #       イテレータとして渡していないのでここで事後処理が必要
     batch_method_orders.add_batch_flush()
@@ -230,4 +211,4 @@ def exec2():
 
 
 if __name__ == '__main__':
-    exec2()
+    exec()

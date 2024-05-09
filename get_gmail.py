@@ -161,7 +161,7 @@ def time_it(func):
     return wrapper
 
 @time_it
-def exec():
+def exec(start_datetime, end_datetime):
     #  get_eamil_bodyで htmlも取得することを前提に記載
     #   for文でこの関数内でイテレータから取り出している
     creds = authenticate()
@@ -169,8 +169,6 @@ def exec():
     db_orders = MongoDBManager(db_name, 'orders_on_gmail')
     db_html = MongoDBManager(db_name, 'orders_html')
     # 期間指定
-    start_datetime = '2024/01/24 00:00:00'
-    end_datetime = '2024/05/03 15:30:00'
     after = datetime_to_unixtime(start_datetime)
     before = datetime_to_unixtime(end_datetime)
     query = f'from:support@kabu.com subject:"【auKabucom】約定通知 " after:{after} before:{before}'
@@ -188,27 +186,9 @@ def exec():
     batch_method_orders.add_batch_flush()
     batch_method_html.add_batch_flush()
     
-@time_it
-def exec2():
-    # get_iter.genereate_body() で複数のデータを処理しないように変更
-    # 通常のイテレータ処理と考えている
-    creds = authenticate()
-    db_name = 'stock_kabu'
-    db_orders = MongoDBManager(db_name, 'orders_on_gmail')
-
-    # 期間指定
-    start_datetime = '2024/01/24 00:00:00'
-    end_datetime = '2024/05/03 15:30:00'
-    after = datetime_to_unixtime(start_datetime)
-    before = datetime_to_unixtime(end_datetime)
-    query = f'from:support@kabu.com subject:"【auKabucom】約定通知 " after:{after} before:{before}'
-    batch_method_orders = InsertBatch(db_orders)
-
-    get_iter = BatchEmailBody(creds, query)
-    body_iter = get_iter.generate_body()
-    #   イテレータを直接渡す
-    batch_method_orders.add_to_batch_iter(body_iter)
 
 
 if __name__ == '__main__':
-    exec()
+    start_datetime = '2024/05/09 00:00:00'
+    end_datetime = '2024/05/09 15:30:00'
+    exec(start_datetime, end_datetime)

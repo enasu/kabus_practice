@@ -4,6 +4,8 @@ __pycache__/
 .dotnet
 .gitconfig
 .gnupg/
+.ipython/
+.jupyter/
 .local
 .hypothesis/
 .ssh/
@@ -16,3 +18,4 @@ __pycache__/
 *.json
 *.txt
 *.pickle
+jupyter_log/

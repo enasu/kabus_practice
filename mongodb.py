@@ -42,10 +42,35 @@ class MongoDBManager:
             all_keys.update(document.keys())
 
         print(all_keys)
-        
-    def convert_pandas(self):
-        documents = self.collection.find()
+
+    def find_one(self, filter=None):
+        document = self.collection.find_one(filter)
+        return  document
+    
+    def find(self,filter=None):
+        document = self.collection.find(filter)
+        pdb.set_trace()
+        return  document
+
+    def convert_pandas(self, filter=None):
+        documents = self.collection.find(filter)
         return pd.DataFrame(list(documents))
+
+    def convert_pd_nestdata(self, filter=None, top_level_fields=None):
+        # top_level_fields は リストを想定
+        
+        documents = self.collection.find(filter)
+        flat_data =[]
+        for doc in documents:
+            for detail in doc['Details']:
+                flat_record = {k: v for k,v in detail.items()}
+                # 必要に応じて他のトップフィールドを追加
+                if top_level_fields:
+                    for field in  top_level_fields:
+                        flat_record[field] = doc.get(field, None) 
+                
+                flat_data.append(flat_record)
+        return pd.DataFrame(flat_data)
 
 class InsertBatch:
     def __init__(self, db, batch_size=100):

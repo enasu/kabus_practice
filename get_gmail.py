@@ -17,6 +17,16 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 # スコープの設定
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 
+def time_it(func):
+    def wrapper(*args, **kwargs):
+        start_time = time.time()
+        result = func(*args, **kwargs)
+        end_time = time.time()
+        print(f"{func.__name__} の実行時間: {end_time - start_time:.6f} 秒")
+        return result
+    return wrapper
+
+@time_it
 def authenticate():
     creds = None
     # すでに保存されたトークンがあれば読み込み
@@ -112,7 +122,8 @@ class BatchGmai:
             return self.parse_email_content(body_content['html'], message_id) , \
                 {'gmail_id': message_id, 'html': body_content['html']}    # データ切出し(上の行）と生のhtmlを返す
                 # key 'gmail_id` は upsert_keyに利用するため def parse_email_contentと合わせた
-                
+    
+
     def parse_email_content(self, html_content, message_id):
         data = {}
         data['gmail_id'] = message_id
@@ -150,15 +161,7 @@ class BatchGmai:
                         data[key_value[0]] = key_value[1]
 
         return data
-    
-def time_it(func):
-    def wrapper(*args, **kwargs):
-        start_time = time.time()
-        result = func(*args, **kwargs)
-        end_time = time.time()
-        print(f"{func.__name__} の実行時間: {end_time - start_time:.6f} 秒")
-        return result
-    return wrapper
+
 
 @time_it
 def exec(start_datetime, end_datetime):
@@ -189,6 +192,6 @@ def exec(start_datetime, end_datetime):
 
 
 if __name__ == '__main__':
-    start_datetime = '2024/05/09 00:00:00'
-    end_datetime = '2024/05/09 15:30:00'
+    start_datetime = '2024/05/14 00:00:00'
+    end_datetime = '2024/05/14 15:30:00'
     exec(start_datetime, end_datetime)

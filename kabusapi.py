@@ -17,24 +17,34 @@ class KabustationApi:
 
     def _request(self, endpoint, params=None, method='GET'):
         url=self.baseurl + endpoint
-        json_data = json.dumps(params).encode('utf8') if params else ''
+        json_data = json.dumps(params).encode('utf8') if params else None
         if method == 'GET':
-            req = urllib.request.Request('{}?{}'.format(url, urllib.parse.urlencode(params)), method='GET')
+            if params:
+                req = urllib.request.Request('{}?{}'.format(url, urllib.parse.urlencode(params)), method='GET')
+            else:
+                req = urllib.request.Request(url, method='GET')
+
         else:   # 'POST' 'PUT' を想定
-            #pdb.set_trace()
             req = urllib.request.Request(url, data=json_data, method=method)    
         req.add_header('Content-Type', 'application/json')
         req.add_header('Host', 'localhost')  # `Host` ヘッダーを追加         docker からアクセスするため
+    
         if self.kabustation_token:
             req.add_header('X-API-KEY', self.kabustation_token)
 
         try:
             with urllib.request.urlopen(req) as res:
-                print(res.status, res.reason)
+                status_code = res.getcode()
+                content = res.read()
+                print("Status Code:", status_code)
+                print("Response Contnt:", content)
+                
+                #print(res.status, res.reason)
                 for header in res.getheaders():
                     print(header)
                 print()
-                content = json.loads(res.read())
+                content = json.loads(content)
+
                 pprint.pprint(content)
                 return content
                 
@@ -45,16 +55,16 @@ class KabustationApi:
                 try:
                     content = json.loads(error_content)
                     pprint.pprint(content)
-                    return {"error": True,"content":content}
+                    return content
                 except json.JSONDecodeError:
                     print("JSON形式ではないエラーレスポンス: ", error_content)
-                    return {"error": True, "content": error_content}
+                    return error_content
             else:
                 print("エラーレスポンスボディが空です。")
-                return {"error": True, "content": "Empty error response body"}
+                return  "Empty error response body"
         except Exception as e:
             print(e)
-            return {"error": True, "content": str(e)}
+            return  str(e)
     
     def fetch_token(self):
         endpoint = '/token'
@@ -62,12 +72,12 @@ class KabustationApi:
         obj = {'APIPassword': self.api_pw}
         # `localhost`を`host.docker.internal`に変更してホストマシンにアクセス       
         content = self._request(endpoint, obj, method='POST')
-        if not content['error']:
-            self.kabustation_token = content['contents'].get('Token')
 
-    def fetch_orders(self):
+        self.kabustation_token = content['Token']
+
+    def fetch_orders(self, params = { 'product': 0 }  ):
         endpoint = '/orders'
-        params = { 'product': 0 }               # product - 0:すべて、1:現物、2:信用、3:先物、4:OP
+        #params = { 'product': 0 }               # product - 0:すべて、1:現物、2:信用、3:先物、4:OP
         #params['id'] = '20201207A02N04830518' # id='xxxxxxxxxxxxxxxxxxxx'
         #params['updtime'] = 20240412140000    # updtime=yyyyMMddHHmmss
         #params['details'] =  'false'          # details='true'/'false'
@@ -76,7 +86,7 @@ class KabustationApi:
         #params['side'] = '2'                  # side - '1':売、'2':買
         #params['cashmargin'] = 3              # cashmargin - 2:新規、3:返済
         
-        content = self._request(endpoint, params, method='GET')
+        content = self._request(endpoint, params=params, method='GET')
         
         return content
     
@@ -89,30 +99,63 @@ class KabustationApi:
         #    {'Symbol': '165120018', 'Exchange': 2},
         #    {'Symbol': '145123218', 'Exchange': 2}
         # ] }
-        content = self._request(endpoint, symbols, method='PUT')
+        symbols_data = self.synbols_dict(symbols)
+        #pdb.set_trace()
+        content = self._request(endpoint, params=symbols_data, method='PUT')
         pprint.pprint(content)
+        
+    def synbols_dict(self,symbols):
+        symbol_list = []
+        for symbol in symbols:
+            symbol_list += [{'Symbol': symbol, "Exchange": 1,}]     #Exchange :1 は東証
+        data = { "Symbols": symbol_list}
+        return data
         
     def unregister(self, symbols):  #登録解除
         endpoint = '/unregister'
-        content = self._request(endpoint, symbols, method='PUT')
-        pprint.pprint(content)     
-        
-    def unregister_all(self):
-        symbols =[]
-        endpoint = '/unregister'
-        content = self._request(endpoint, symbols, method='PUT')
+        symbols_data = self.synbols_dict(symbols)
+        pdb.set_trace()
+        content = self._request(endpoint, params=symbols_data, method='PUT')
         pprint.pprint(content)
         
-def reg_symbols():
-    symbols = { 'Symbols':
-        [
-            3778,6301,7201,8354,9509
-        ]
-        }
-    api = KabustationApi(stage='test')
-    #response = api.register_symbols(symbols)
-    #print(response)
+        
+    def unregister_all(self):
+        endpoint = '/unregister/all'
+        content = self._request(endpoint, params=None, method='PUT')
+        pprint.pprint(content)
+        
+def reg_symbols(stage='test'):
+    symbols=[3778,9509]
+
+    api = KabustationApi(stage=stage)
+    response = api.register_symbols(symbols)
+    print(response)
     
+def fetch_orders(updtime,stage='test'):
+    params = { 
+              'product': 0,
+              'updtime':updtime
+              }
+    api = KabustationApi(stage= stage)
+    response = api.fetch_orders(params=params)
+    print(response)
+
+
+def unregister_all(stage='test'):
+    api = KabustationApi(stage= stage)
+    response = api.unregister_all()
+    print(response)
+    
+def unregister(stage='test'):
+    symbols=[6301,6526,6857,
+            6920,6954,7011,7203,8058]
+    api = KabustationApi(stage= stage)
+    response = api.unregister(symbols)
+    print(response)
 
 if __name__ == '__main__':
-    reg_symbols()
+    updtime = 20240517140000
+    fetch_orders(updtime, stage='honban')
+   #unregister_all(stage="honban")
+   #reg_symbols("honban")
+   #unregister(stage="honban")

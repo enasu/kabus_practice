@@ -9,7 +9,7 @@ from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from mongodb import MongoDBManager, InsertBatch
-import time
+from  utility import time_it 
 import pdb
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
@@ -17,14 +17,6 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 # スコープの設定
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 
-def time_it(func):
-    def wrapper(*args, **kwargs):
-        start_time = time.time()
-        result = func(*args, **kwargs)
-        end_time = time.time()
-        print(f"{func.__name__} の実行時間: {end_time - start_time:.6f} 秒")
-        return result
-    return wrapper
 
 @time_it
 def authenticate():
@@ -192,6 +184,6 @@ def exec(start_datetime, end_datetime):
 
 
 if __name__ == '__main__':
-    start_datetime = '2024/05/14 00:00:00'
-    end_datetime = '2024/05/14 15:30:00'
+    start_datetime = '2024/05/16 00:00:00'
+    end_datetime = '2024/05/16 15:30:00'
     exec(start_datetime, end_datetime)

@@ -1,4 +1,4 @@
-from pymongo import MongoClient
+from pymongo import MongoClient, UpdateOne
 import os
 import time
 import pandas as pd
@@ -9,19 +9,32 @@ MONGO_PW = os.getenv('MONGO_PW')
 
 
 class MongoDBManager:
-    def __init__(self, db_name ,collection_name):
+    def __init__(self, db_name ,collection_name=None):
         self.client = MongoClient(f'mongodb://{MONGO_USER}:{MONGO_PW}@mongodb:27017/')
         self.db = self.client[db_name]
+        self.collection = None
+        if collection_name:
+            self.select_collection(collection_name) 
+        if self.collection:
+            self.start_count = self.collection.count_documents({})
+    
+    def select_collection(self, collection_name):
+        # collectionが動的に変更する場合に対応
         self.collection = self.db[collection_name]
-        self.start_count = self.collection.count_documents({})
 
     def insert_batch(self, datas):
         self.collection.insert_many(datas)
             
     def insert_upsert(self, datas, upsert_key):
         # upsert_keyは、辞書型 ex {'ID': item['ID']}
+        # バルク操作のためのリストを初期化
+        bulk_operations = []
         for data in datas:
-            self.collection.update_one(upsert_key, {'$set':data}, upsert=True)
+            operation = UpdateOne(upsert_key, {'$set':data}, upsert=True)
+            bulk_operations.append(operation)
+        # バルク操作の実行
+        if bulk_operations:
+            self.collection.bulk_write(bulk_operations)    
             
     def check_summary(self):
         end_count = self.collection.count_documents({})

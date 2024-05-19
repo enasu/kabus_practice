@@ -21,6 +21,10 @@ class MongoDBManager:
     def select_collection(self, collection_name):
         # collectionが動的に変更する場合に対応
         self.collection = self.db[collection_name]
+        
+    def list_collection_names(self):
+        # このメソッドを追加して、内部のdbオブジェクトからコレクション名を取得
+        return self.db.list_collection_names()
 
     def insert_batch(self, datas):
         self.collection.insert_many(datas)
@@ -52,9 +56,10 @@ class MongoDBManager:
         all_keys = set()
         
         for document in self.collection.find():
+            #   documentによってkeyが異なる可能性があるため回している
             all_keys.update(document.keys())
 
-        print(all_keys)
+        return all_keys
 
     def find_one(self, filter=None):
         document = self.collection.find_one(filter)

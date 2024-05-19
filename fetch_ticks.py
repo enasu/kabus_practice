@@ -45,6 +45,7 @@ def ticks_for_mongodb(file_path, date_str):
         
 @time_it                        
 def fetch_ticks_after_treatment(processed_date=None):
+    # Ticks.jsonをmongodbに保存
     files = glob.glob('mnt_data/*Ticks*.json')
     files.sort(key=lambda x: os.stat(x).st_ctime) 
     if processed_date:
@@ -62,6 +63,40 @@ def fetch_ticks_after_treatment(processed_date=None):
         print(f'以下のjsonを処理します: {file}')
         ticks_for_mongodb(file, date_str)
         
+def fetch_ticks_json():
+    files = glob.glob('mnt_data/*Ticks*.json')
+    files.sort(key=lambda x: os.stat(x).st_ctime) 
+    
+class FetchTicksjson:
+    def __init__(self):
+        self.files = glob.glob('mnt_data/*Ticks*.json')
+        self.files.sort(key=lambda x: os.stat(x).st_ctime) 
+    
+    def fetch_one(self, num):
+        file = self.files[num]
+        date_str = re.search(r'(\d{8})', file).group(1)
+        return file, date_str
+    
+    def fetch_files(self):
+        files_data=[]
+        for file in self.files:
+            date_str = re.search(r'(\d{8})', file).group(1)
+            data = {'file_path':file, 'data_str': date_str}  
+            files_data.append(data)
+        return files_data
+
+    def iter_files(self, func):
+        item_iter = self._yield_files()
+        for item_tuple in item_iter :
+            func(item_tuple[0], item_tuple[1])
+    
+    def _yield_files(self):
+        files_data=[]
+        for file in self.files:
+            date_str = re.search(r'(\d{8})', file).group(1)
+            yield file, date_str
+    
+
                 
 def date_to_microsecond(date_str):
     # 日付データを datetime オブジェクトに変換
@@ -73,5 +108,6 @@ def date_to_microsecond(date_str):
 
 if __name__ == '__main__':
 
+    # BriSKから取得した歩み値をmongodbへインサートする
     processed_date=20240517
     fetch_ticks_after_treatment(str(processed_date))

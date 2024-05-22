@@ -1,9 +1,14 @@
 import concurrent.futures
 from googleapiclient.errors import HttpError
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from googleapiclient.discovery import build
 from get_gmail import authenticate
+from mongodb import MongoDBManager
 
 def fetch_and_save_email_data(executor, service, db_manager, user_id, query):
     try:
+        
         response = service.users().messages().list(userId=user_id, q=query).execute()
         messages = response.get('messages', [])
         if messages:
@@ -38,7 +43,8 @@ def save_data_to_db(db_manager, data):
 
 # 非同期処理のメインロジック
 def main():
-    service = authenticate()  # Gmail APIの認証
+    cred = authenticate()
+    service = build('gmail', 'v1', credentials=cred)  # Gmail APIの認証
     user_id = 'your_user_id_here'
     query = 'from:someone@example.com subject:"Important"'
     db_manager = MongoDBManager('your_db_name', 'your_collection_name')

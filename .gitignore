@@ -5,6 +5,7 @@ __pycache__/
 .gitconfig
 .gnupg/
 .ipython/
+.ipynb_*
 .jupyter/
 .local
 .hypothesis/

@@ -2,6 +2,7 @@ from pymongo import MongoClient, UpdateOne
 import os
 import time
 import pandas as pd
+from utility import time_it
 import pdb
 
 MONGO_USER = os.getenv('MONGO_USER')
@@ -15,7 +16,6 @@ class MongoDBManager:
         self.collection = None
         if collection_name:
             self.select_collection(collection_name) 
-        if self.collection:
             self.start_count = self.collection.count_documents({})
     
     def select_collection(self, collection_name):
@@ -30,11 +30,12 @@ class MongoDBManager:
         self.collection.insert_many(datas)
             
     def insert_upsert(self, datas, upsert_key):
-        # upsert_keyは、辞書型 ex {'ID': item['ID']}
+        # upsert_keyは、リストで取得 ex ['ID', 'user'] 
         # バルク操作のためのリストを初期化
         bulk_operations = []
         for data in datas:
-            operation = UpdateOne(upsert_key, {'$set':data}, upsert=True)
+            upsert_key_dict = {k: data[k] for k in upsert_key}
+            operation = UpdateOne(upsert_key_dict, {'$set':data}, upsert=True)
             bulk_operations.append(operation)
         # バルク操作の実行
         if bulk_operations:
@@ -52,7 +53,7 @@ class MongoDBManager:
         else:
             print(f'追加データは以下の1件です:{self.collection.find().skip(end_count)}')
             
-    def fetch_unique_field(self):
+    def check_unique_field(self):
         all_keys = set()
         
         for document in self.collection.find():
@@ -67,20 +68,21 @@ class MongoDBManager:
     
     def find(self,filter=None):
         document = self.collection.find(filter)
-        pdb.set_trace()
         return  document
 
     def convert_pandas(self, filter=None):
+        # TODO 別に移すか　削除する
         documents = self.collection.find(filter)
         return pd.DataFrame(list(documents))
 
     def convert_pd_nestdata(self, filter=None, top_level_fields=None):
+        # TODO 別に移すか　削除する
         # top_level_fields は リストを想定
         
         documents = self.collection.find(filter)
         flat_data =[]
         for doc in documents:
-            for detail in doc['Details']:
+            for detail in doc['Details']:                       # このdhiteilsは特定のデータの形式　汎用化するか 削除するか
                 flat_record = {k: v for k,v in detail.items()}
                 # 必要に応じて他のトップフィールドを追加
                 if top_level_fields:
@@ -96,7 +98,7 @@ class InsertBatch:
         self.datas = []
         self.batch_size = batch_size
         
-    def add_to_batch_iter(self, iter):
+    def use_batch_from_iter(self, iter):
         #   イテレーターを受け入れるメソッド
         #       この場合呼び出しは iterをそのまま引数に入れれば良く for 文は事前に必要ない
         for body in iter:
@@ -104,33 +106,36 @@ class InsertBatch:
             if len(self.datas) == self.batch_size:
                 self.db.insert_batch(self.datas)
                 self.datas=[]
-        self.add_batch_flush()
-        
-    def add_to_batch_item(self, item):
+        self.use_insert_batch_flush()
+    
+    @time_it   
+    def use_insert_batch(self, item):
         #   通常のデータを受け入れるメソッド
         self.datas.append(item)
         if len(self.datas) == self.batch_size:
             self.db.insert_batch(self.datas)
             self.datas=[]
 
-    def add_batch_flush(self):
+    def use_insert_batch_flush(self):
         if self.datas:
             self.db.insert_batch(self.datas)
     
-    def add_to_upsert_iter(self, iter, upsert_key):
+    def use_insert_upset_from_iter(self, iter, upsert_key):
+        #upsert_key はリストで提供 ['id', 'user'] など
         for body in iter:
             self.datas.append(body)
             if len(self.datas) == self.batch_size:
                 self.db.insert_upsert(self.datas, upsert_key)
                 self.datas=[]
-        self.add_upsert_flush(self.datas, upsert_key)
+        self.use_insert_upsert(self.datas, upsert_key)
     
-    def add_to_upsert_item(self, item, upsert_key):
+    def use_insert_upsert(self, item, upsert_key):
         self.datas.append(item)
         if len(self.datas) == self.batch_size:
             self.db.insert_upsert(self.datas, upsert_key)
             self.datas=[]
+        self.use_insert_upsert(self.datas, upsert_key)
 
-    def add_upsert_flush(self, upsert_key):
-        if self.datas:
-            self.db.insert_upsert(self.datas, upsert_key)
+    def use_insert_upsert_flush(self, datas, upsert_key):
+        if datas:
+            self.db.insert_upsert(datas, upsert_key)

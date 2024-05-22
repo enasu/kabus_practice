@@ -3,6 +3,7 @@ import json
 import pprint
 import os
 import pdb
+from utility import time_it
 
 class KabustationApi:
     def __init__(self, stage='test'):
@@ -74,8 +75,8 @@ class KabustationApi:
         content = self._request(endpoint, obj, method='POST')
 
         self.kabustation_token = content['Token']
-
-    def fetch_orders(self, params = { 'product': 0 }  ):
+    @time_it
+    def fetch_orders(self, params = { 'product': 0, 'state':5}  ):
         endpoint = '/orders'
         #params = { 'product': 0 }               # product - 0:すべて、1:現物、2:信用、3:先物、4:OP
         #params['id'] = '20201207A02N04830518' # id='xxxxxxxxxxxxxxxxxxxx'
@@ -125,20 +126,21 @@ class KabustationApi:
         pprint.pprint(content)
         
 def reg_symbols(stage='test'):
-    symbols=[3778,9509]
+    symbols=[9509]
 
     api = KabustationApi(stage=stage)
     response = api.register_symbols(symbols)
     print(response)
-    
+
+@time_it
 def fetch_orders(updtime,stage='test'):
     params = { 
               'product': 0,
               'updtime':updtime
               }
     api = KabustationApi(stage= stage)
-    response = api.fetch_orders(params=params)
-    print(response)
+    data = api.fetch_orders(params=params)
+
 
 
 def unregister_all(stage='test'):

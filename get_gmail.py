@@ -88,12 +88,6 @@ class BatchGmai:
                         yield self.get_email_body(message['id'])
             else:
                 break
-            
-    def generate_results(self):
-        #   generater これを上の式に入れるとうまく動かない
-            messages = self.results.get('messages', [])
-            for message in messages:
-                yield self.get_email_body(message['id'])
 
     def get_email_body(self, message_id):
         message = self.service.users().messages().get(userId='me', id=message_id, format='full').execute()
@@ -156,9 +150,10 @@ class BatchGmai:
 
 
 @time_it
-def exec(start_datetime, end_datetime):
-    #  get_eamil_bodyで htmlも取得することを前提に記載
-    #   for文でこの関数内でイテレータから取り出している
+def orders_from_gmail_handler(start_datetime, end_datetime):
+    #  get_eamil_bodyでから　order情報を抽出したものと、無加工のhtmlを
+    # 　mongodb stock_kabu のそれぞれのコレクションへ保存する
+    # #   for文でこの関数内でイテレータから取り出している
     creds = authenticate()
     db_name = 'stock_kabu'
     db_orders = MongoDBManager(db_name, 'orders_on_gmail')
@@ -167,23 +162,24 @@ def exec(start_datetime, end_datetime):
     after = datetime_to_unixtime(start_datetime)
     before = datetime_to_unixtime(end_datetime)
     query = f'from:support@kabu.com subject:"【auKabucom】約定通知 " after:{after} before:{before}'
-    batch_method_orders = InsertBatch(db_orders)
-    batch_method_html = InsertBatch(db_html)
+    insert_method_orders = InsertBatch(db_orders)
+    insert_method_html = InsertBatch(db_html)
     get_iter = BatchGmai(creds, query)
+    upsert_key=['gmail_id']
     item_iter = get_iter.exec()
     #   イテレータから　情報を取り出す処理
     #       複数データをイテレータでとりだすため一旦取り出してデータとして渡す必要がある
     for item_tuple in item_iter:
-        batch_method_orders.add_to_batch_item(item_tuple[0])
-        batch_method_html.add_to_batch_item(item_tuple[1])
+        insert_method_orders.use_insert_upsert(item_tuple[0], upsert_key)
+        insert_method_html.use_insert_upsert(item_tuple[1], upsert_key)
     #   batch_size に満たないデータが入っているときの処理
     #       イテレータとして渡していないのでここで事後処理が必要
-    batch_method_orders.add_batch_flush()
-    batch_method_html.add_batch_flush()
+    insert_method_orders.use_insert_upsert_flush(item_tuple[0], upsert_key)
+    insert_method_html.use_insert_upsert_flush(item_tuple[1], upsert_key)
     
 
 
 if __name__ == '__main__':
-    start_datetime = '2024/05/16 00:00:00'
-    end_datetime = '2024/05/16 15:30:00'
-    exec(start_datetime, end_datetime)
+    start_datetime = '2024/02/01 00:00:00'
+    end_datetime = '2024/05/20 15:30:00'
+    orders_from_gmail_handler(start_datetime, end_datetime)

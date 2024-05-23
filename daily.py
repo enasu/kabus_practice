@@ -29,12 +29,12 @@ if __name__ == '__main__':
     upsert_key = ['ID']
     kabusdb.insert_upsert(datas, upsert_key)
     
-    # # gmailから order情報をmongodbへ保存
-    today2 = dt_now.strftime('%Y/%m/%d')
-    start_datetime = today2 + ' 00:00:00'
-    end_datetime = today2 + ' 15:10:00'
-    print(start_datetime,end_datetime)
-    orders_from_gmail_handler(start_datetime, end_datetime)
+    # # # gmailから order情報をmongodbへ保存
+    # today2 = dt_now.strftime('%Y/%m/%d')
+    # start_datetime = today2 + ' 00:00:00'
+    # end_datetime = today2 + ' 15:10:00'
+    # print(start_datetime,end_datetime)
+    # orders_from_gmail_handler(start_datetime, end_datetime)
     
     # Briskから取得した歩み値をmongodbへ保存
     insert_obj = TicksInsertHandling()

@@ -32,7 +32,7 @@ def authenticate():
                 creds.refresh(Request())
             else:
                 flow = InstalledAppFlow.from_client_secrets_file(
-                    '../data/credentials.json', SCOPES)
+                    '/data/credentials.json', SCOPES)
                 creds = flow.run_local_server(port=9990)    # docker container から実行する為 defaultは port=0
             # 新しいトークンを保存
             with open('token.pickle', 'wb') as token:
@@ -162,21 +162,20 @@ def orders_from_gmail_handler(start_datetime, end_datetime):
     after = datetime_to_unixtime(start_datetime)
     before = datetime_to_unixtime(end_datetime)
     query = f'from:support@kabu.com subject:"【auKabucom】約定通知 " after:{after} before:{before}'
-    insert_method_orders = InsertBatch(db_orders)
-    insert_method_html = InsertBatch(db_html)
+
     get_iter = BatchGmai(creds, query)
     upsert_key=['gmail_id']
     item_iter = get_iter.exec()
     #   イテレータから　情報を取り出す処理
     #       複数データをイテレータでとりだすため一旦取り出してデータとして渡す必要がある
     for item_tuple in item_iter:
-        insert_method_orders.use_insert_upsert(item_tuple[0], upsert_key)
-        insert_method_html.use_insert_upsert(item_tuple[1], upsert_key)
+
+        db_orders.insert_upsert(item_tuple[0], upsert_key)
+        db_html.insert_upsert(item_tuple[1], upsert_key)
     #   batch_size に満たないデータが入っているときの処理
     #       イテレータとして渡していないのでここで事後処理が必要
-    insert_method_orders.use_insert_upsert_flush(item_tuple[0], upsert_key)
-    insert_method_html.use_insert_upsert_flush(item_tuple[1], upsert_key)
-    
+    #insert_method_orders.use_insert_upsert_flush(item_tuple[0], upsert_key)
+    #insert_method_html.use_insert_upsert_flush(item_tuple[1], upsert_key)
 
 
 if __name__ == '__main__':

@@ -3,8 +3,10 @@ from googleapiclient.errors import HttpError
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
-from get_gmail import authenticate
+from get_gmail import authenticate, datetime_to_unixtime
 from mongodb import MongoDBManager
+
+# 作成途中
 
 def fetch_and_save_email_data(executor, service, db_manager, user_id, query):
     try:
@@ -42,16 +44,17 @@ def save_data_to_db(db_manager, data):
         db_manager.insert_upsert(data, upsert_key=['gmail_id'])
 
 # 非同期処理のメインロジック
-def main():
+def main(start_datetime, end_datetime):
     cred = authenticate()
     service = build('gmail', 'v1', credentials=cred)  # Gmail APIの認証
-    user_id = 'your_user_id_here'
-    query = 'from:someone@example.com subject:"Important"'
+    after = datetime_to_unixtime(start_datetime)
+    before = datetime_to_unixtime(end_datetime)
+    query = f'from:support@kabu.com subject:"【auKabucom】約定通知 " after:{after} before:{before}'
     db_manager = MongoDBManager('your_db_name', 'your_collection_name')
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
         # 初回のメールデータ取得と保存を非同期で開始
-        executor.submit(fetch_and_save_email_data, executor, service, db_manager, user_id, query)
+        executor.submit(fetch_and_save_email_data, executor, service, db_manager, query)
 
 if __name__ == '__main__':
     main()

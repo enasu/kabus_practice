@@ -29,16 +29,22 @@ class MongoDBManager:
     def insert_batch(self, datas):
         self.collection.insert_many(datas)
             
-    def insert_upsert(self, datas, upsert_key):
+    def insert_upsert(self, data, upsert_key):
         # upsert_keyは、リストで取得 ex ['ID', 'user'] 
         # バルク操作のためのリストを初期化
+        c=0
         bulk_operations = []
-        for data in datas:
-            upsert_key_dict = {k: data[k] for k in upsert_key}
+        c=c+1
+        try:
+            upsert_key_dict = {k: data[k] for k in upsert_key if k in data}
             operation = UpdateOne(upsert_key_dict, {'$set':data}, upsert=True)
             bulk_operations.append(operation)
+        except Exception as e:
+            print(f'mongodbmanager の insert_upsert で エラーが発生しました count : {c} その時のdata : {data}')
+            
         # バルク操作の実行
         if bulk_operations:
+
             self.collection.bulk_write(bulk_operations)    
             
     def check_summary(self):
@@ -120,22 +126,3 @@ class InsertBatch:
         if self.datas:
             self.db.insert_batch(self.datas)
     
-    def use_insert_upset_from_iter(self, iter, upsert_key):
-        #upsert_key はリストで提供 ['id', 'user'] など
-        for body in iter:
-            self.datas.append(body)
-            if len(self.datas) == self.batch_size:
-                self.db.insert_upsert(self.datas, upsert_key)
-                self.datas=[]
-        self.use_insert_upsert(self.datas, upsert_key)
-    
-    def use_insert_upsert(self, item, upsert_key):
-        self.datas.append(item)
-        if len(self.datas) == self.batch_size:
-            self.db.insert_upsert(self.datas, upsert_key)
-            self.datas=[]
-        self.use_insert_upsert(self.datas, upsert_key)
-
-    def use_insert_upsert_flush(self, datas, upsert_key):
-        if datas:
-            self.db.insert_upsert(datas, upsert_key)

@@ -5,13 +5,11 @@ import pandas as pd
 from utility import time_it
 import pdb
 
-MONGO_USER = os.getenv('MONGO_USER')
-MONGO_PW = os.getenv('MONGO_PW')
-
-
 class MongoDBManager:
     def __init__(self, db_name ,collection_name=None):
-        self.client = MongoClient(f'mongodb://{MONGO_USER}:{MONGO_PW}@mongodb:27017/')
+        self.MONGO_USER = os.getenv('MONGO_USER')
+        self.MONGO_PW = os.getenv('MONGO_PW')        
+        self.client = MongoClient(f'mongodb://{self.MONGO_USER}:{self.MONGO_PW}@mongodb:27017/')
         self.db = self.client[db_name]
         self.collection = None
         if collection_name:

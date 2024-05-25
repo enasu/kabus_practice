@@ -16,8 +16,13 @@ def test_datetimeparser():
     for datetime in datetime_list:
         c=c+1
         parser = DateTimeParser(datetime)
-        print(f'test_DateTimeParser {c}>>> {datetime} : unix time: {parser.unix_time}')
+        print(f'test_DateTimeParser {c}>>> {datetime} : date_std : {parser.date_std}')
         print(f'                                      : microsec : {parser.microsec}')
+        print(f'                                      : unix time: {parser.unix_time}')
+        previous_parser = parser.get_previous_day()
+        print(f'前日は             : date_std : {previous_parser.date_std}')
+        print(f'                   : microsec : {previous_parser.microsec}')
+        print(f'                   : unix time: {previous_parser.unix_time}')
 
 if __name__ == '__main__':
     measure_len()

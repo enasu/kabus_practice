@@ -25,7 +25,10 @@ class MongoDBManager:
         return self.db.list_collection_names()
 
     def insert_batch(self, datas):
-        self.collection.insert_many(datas)
+        result = self.collection.insert_many(datas)
+        print(type(result))
+        print(f'collection : {self.collection}')
+        print(f'batch処理しました 最初のデータ{datas[0]}')
             
     def insert_upsert(self, data, upsert_key):
         # upsert_keyは、リストで取得 ex ['ID', 'user'] 

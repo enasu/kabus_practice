@@ -1,8 +1,9 @@
 from mongodb import MongoDBManager
 import pandas as pd
 
-class OrderOnGmailTakeout:
+class TakeoutOrderOnGmail:
     def __init__(self):
+        # mongodbから rodersongmaiを取り出す
         pass
     
     def takeout_mongo(self):

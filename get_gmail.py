@@ -9,28 +9,15 @@ from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from mongodb import MongoDBManager
-from  utility import time_it 
+from  utility import time_it, DateTimeParser 
 import pdb
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 
-# スコープの設定
-
-
-
-
-def datetime_to_unixtime(date_str):
-    # 日時文字列をdatetimeオブジェクトに変換（JSTとして解釈）
-    dt = datetime.strptime(date_str, '%Y/%m/%d %H:%M:%S')
-    # JSTをUTCに変換
-    dt_utc = dt - timedelta(hours=9)  # JSTはUTC+9
-    # UNIX時間（エポック秒）に変換
-    unixtime = int(dt_utc.replace(tzinfo=timezone.utc).timestamp())
-    return unixtime
 
 class GmailApi:
     def __init__(self):
-        self.SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
+        self.SCOPES = ['https://www.googleapis.com/auth/gmail.readonly'] # スコープの設定
         self.creds = self.authenticate()
         self.service=build('gmail', 'v1', credentials=self.creds)
     
@@ -162,25 +149,41 @@ class GetOrderFromGmailApiHandler:
         self.query ='from:support@kabu.com subject:"【auKabucom】約定通知 "'
         self.parse_obj = Parse_email_content_orders()
     
+    @time_it
     def exec(self):
         upsert_key=['gmail_id']
         gmail_api=GmailApi()
-        message_iter = gmail_api.get_message_iter(self.query)
-        for message in message_iter:
-            item_tuple = self.parse_obj.body_content(message)
+        try:
+            message_iter = gmail_api.get_message_iter(self.query)
+            for message in message_iter:
+                item_tuple = self.parse_obj.body_content(message)
+                
+                self.db_orders.insert_upsert(item_tuple[0], upsert_key)
+                self.db_html.insert_upsert(item_tuple[1], upsert_key)
+        except Exception as e:
+            print(f'class GetOdersFromGmailApiHander def exec でエラーです {e}')
+            raise
+        
             
-            self.db_orders.insert_upsert(item_tuple[0], upsert_key)
-            self.db_html.insert_upsert(item_tuple[1], upsert_key)
+    def add_datetime_to_query(self, start_datetime_str, end_datetime_str):
+        # datetime はstr '2024/05/22 00:00:00'
+        try:
+            #pdb.set_trace()
+            #gmail api は unixtimeで指定
             
-    def add_datetime_to_query(self, start_datetime, end_datetime):
-        after = datetime_to_unixtime(start_datetime)
-        before = datetime_to_unixtime(end_datetime)
-        self.query = self.query + f' after:{after} before:{before}'
+            parser_after = DateTimeParser(start_datetime_str)
+            after = parser_after.unix_time
+            parser_befor = DateTimeParser(end_datetime_str)
+            before = parser_befor.unix_time
+            self.query = self.query + f' after:{after} before:{before}'
+        except Exception as e:
+            print(f'class GetOdersFromGmailApiHander def add_datetime_to_query でエラーです {e}')
+            raise
 
 
 if __name__ == '__main__':
-    start_datetime = '2024/05/22 00:00:00'
-    end_datetime = '2024/05/22 15:30:00'
+    start_datetime = '20240522 00:00:00'
+    end_datetime = '20240522 15:30:00'
     gmail_handler = GetOrderFromGmailApiHandler()
     gmail_handler.add_datetime_to_query(start_datetime,end_datetime)
     gmail_handler.exec()

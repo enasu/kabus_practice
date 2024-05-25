@@ -37,16 +37,13 @@ class KabustationApi:
             with urllib.request.urlopen(req) as res:
                 status_code = res.getcode()
                 content = res.read()
-                print("Status Code:", status_code)
-                print("Response Contnt:", content)
+                print("token Status Code:", status_code)
+                #print("Response Contnt:", content)
                 
                 #print(res.status, res.reason)
                 for header in res.getheaders():
                     print(header)
-                print()
                 content = json.loads(content)
-
-                pprint.pprint(content)
                 return content
                 
         except urllib.error.HTTPError as e:
@@ -76,7 +73,7 @@ class KabustationApi:
 
         self.kabustation_token = content['Token']
     @time_it
-    def fetch_orders(self, params = { 'product': 0, 'state':5}  ):
+    def fetch_orders(self, params = { 'product': 0, 'state':5}):
         endpoint = '/orders'
         #params = { 'product': 0 }               # product - 0:すべて、1:現物、2:信用、3:先物、4:OP
         #params['id'] = '20201207A02N04830518' # id='xxxxxxxxxxxxxxxxxxxx'
@@ -86,11 +83,14 @@ class KabustationApi:
         #params['state'] = 5                   # state - 1:待機（発注待機）、2:処理中（発注送信中）、3:処理済（発注済・訂正済）、4:訂正取消送信中、5:終了（発注エラー・取消済・全約定・失効・期限切れ）
         #params['side'] = '2'                  # side - '1':売、'2':買
         #params['cashmargin'] = 3              # cashmargin - 2:新規、3:返済
-        
-        content = self._request(endpoint, params=params, method='GET')
-        
-        return content
-    
+
+        try:        
+            content = self._request(endpoint, params=params, method='GET')    
+            return content
+        except Exception as e:
+            print(f'class KabustationApi def fetch_orders でエラー')
+            print(e)
+            exit
     def register_symbols(self, symbols):
         endpoint = '/register'
         #symbols は以下の形式
@@ -115,7 +115,7 @@ class KabustationApi:
     def unregister(self, symbols):  #登録解除
         endpoint = '/unregister'
         symbols_data = self.synbols_dict(symbols)
-        pdb.set_trace()
+ 
         content = self._request(endpoint, params=symbols_data, method='PUT')
         pprint.pprint(content)
         
@@ -155,9 +155,30 @@ def unregister(stage='test'):
     response = api.unregister(symbols)
     print(response)
 
+
+from datetime import datetime
+from mongodb import MongoDBManager
+
 if __name__ == '__main__':
-    updtime = 20240517140000
-    fetch_orders(updtime, stage='honban')
+    #updtime = 20240517140000
+    #fetch_orders(updtime, stage='honban')
    #unregister_all(stage="honban")
    #reg_symbols("honban")
    #unregister(stage="honban")
+   
+    dt_now = datetime.now()
+    today_str = dt_now.strftime('%Y%m%d') 
+    today = datetime.strptime(today_str, '%Y%m%d')
+    today_microsec= int(today.timestamp() * 1_000_000) 
+    print(today_microsec)
+    params={
+        'product': 0 ,
+        'updtime': today_microsec,
+        'state':5
+    }
+    kabustation_api = KabustationApi(stage='honban')
+    api_datas = kabustation_api.fetch_orders(params=params)
+    kabusdb = MongoDBManager('stock_kabu',collection_name='orders')
+    # アップサートのキーを定義
+    upsert_key = ['ID']
+    kabusdb.insert_upsert(api_datas, upsert_key)

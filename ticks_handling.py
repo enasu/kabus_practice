@@ -6,14 +6,14 @@ import pandas as pd
 from datetime import timedelta, datetime
 from pymongo import MongoClient, ASCENDING, UpdateOne
 from mongodb import MongoDBManager
-from  utility import time_it, date_to_microsecond
+from  utility import time_it, DateTimeParser
 import pdb
 
 
 class TicksJsonFileInfo:
     # mnt_data/*Ticks*.json file の　file名と file名に付いている日付データを返す
     def __init__(self):
-        self.files = glob.glob('mnt_data/*Ticks*.json')
+        self.files = glob.glob('/app/mnt_data/*Ticks*.json')
         self.rename_file_with_date()                        # 日付がはいていないファイルに日付を入れる
     
     def select_one(self, num):
@@ -54,7 +54,7 @@ class TicksJsonFileInfo:
                 # 現状では、わざわざ取得しに行くのでダブリの判定は不要と判断している
                 os.rename(file, os.path.join(os.path.dirname(file), new_file_name))
                 print(f'basename: {base_name} ⇒ newname : {new_file_name} ')
-        self.files = glob.glob('/mnt/data/*Ticks*.json')
+        self.files = glob.glob('/app/mnt_data/*Ticks*.json')
 
         
 
@@ -89,19 +89,22 @@ class TicksInsertToMongo:
         
     def exec(self, file_path, date_str):
     
-        data = self.read_json(file_path)                                    #jsonfile の 読込
-        date_convert = date_to_microsecond(date_str)                        #日付データをmicrosecへ変換　外部関数
+        data = self.read_json(file_path)                           #jsonfile の 読込
+        parser = DateTimeParser(date_str)
+        date_convert = parser.microsce                      #日付データをmicrosecへ変換　外部関数
         collection_name, documents = self.data_mapping(data, date_convert)  # data を mapping
+
         if documents:    
             self.db.select_collection(collection_name)                      
             self.db.insert_batch(documents)
                 
 
-class TicksInsertHandling:
+class TicksInsertHandler:
     def __init__(self):
         glob_obj = TicksJsonFileInfo()
+
         self.files_data = glob_obj.get_files_info()      # files_info_list は {file_path: hoge , date_str: fuga} のリスト
-        self.exec_obj = TicksInsertToMongo()    
+        self.mongo_obj = TicksInsertToMongo()    
 
     @time_it    
     def insert_after_processed(self, processed_date): 
@@ -109,23 +112,35 @@ class TicksInsertHandling:
         if processed_date:
             if not isinstance(processed_date, str):
                 processed_date =str(processed_date)
+
             for file_info in self.files_data:
                 processed_d = datetime.strptime(processed_date,'%Y%m%d')
                 file_date = datetime.strptime(file_info['date_str'],'%Y%m%d')
+
                 if processed_d < file_date:
                     print(f'以下のjsonを処理します: {file_info["file_path"]}')
-                    self.exec_obj.exec(file_info['file_path'], file_info['date_str'])
+                    pdb.set_trace()
+
+                    self.mongo_obj.exec(file_info['file_path'], file_info['date_str'])
                     c=c+1
             if c == 0:
                 print('処理するデータはありません')
     @time_it        
-    def insert_one(self):
-        file_info = self.files_data[0]
+    def insert_one(self, num):
+        '''
+        numはゼロ始まり
+        '''
+        file_info = self.files_data[num]
         print(f'以下のjsonを処理します: {file_info["file_path"]}')
         self.exec_obj.exec(file_info['file_path'], file_info['date_str'])
         
+    def print_files(self):
+        # insert_oneのhelper
+        for c in len(self.files_data):
+            print(f' {c-1}: {self.files_data}')
+        
 
-class TicksTakeOutHandling:
+class TicksTakeOutHandler:
     def __init__(self):
         db_name ='kabu_ticks'
         self.db = MongoDBManager(db_name)
@@ -139,6 +154,8 @@ class TicksTakeOutHandling:
         pass
     def formatting(self):
         self.df['timestamp'] = self.df['timestamp'].apply(lambda x: datetime.fromtimestamp(x / 1_000_000))
+        self.df['Date'] = self.df['timestamp'].dt.date
+        self.df['Time'] = self.df['timestamp'].dt.time
         # 'timestamp' 列をインデックスに設定
         self.df.set_index('timestamp', inplace=True)
         self.df.drop('_id', axis=1, inplace=True)
@@ -193,7 +210,7 @@ if __name__ == '__main__':
 
     # BriSKから取得した歩み値をmongodbへインサートする
     #processed_date=20240517
-    #obj = TicksInsertHandling()
+    #obj = TicksInsertHandler()
     #obj.insert_after_processed(processed_date)    
 
     #read_obj = TicksReadFromJson()

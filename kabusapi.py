@@ -3,7 +3,7 @@ import json
 import pprint
 import os
 import pdb
-from utility import time_it
+from utility import time_it, handle_exception
 
 class KabustationApi:
     def __init__(self, stage='test'):
@@ -60,8 +60,8 @@ class KabustationApi:
             else:
                 print("エラーレスポンスボディが空です。")
                 return  "Empty error response body"
-        except Exception as e:
-            print(e)
+        except Exception:
+            handle_exception()
             return  str(e)
     
     def fetch_token(self):
@@ -87,10 +87,9 @@ class KabustationApi:
         try:        
             content = self._request(endpoint, params=params, method='GET')    
             return content
-        except Exception as e:
-            print(f'class KabustationApi def fetch_orders でエラー')
-            print(e)
-            exit
+        except Exception:
+            handle_exception()
+            raise
     def register_symbols(self, symbols):
         endpoint = '/register'
         #symbols は以下の形式

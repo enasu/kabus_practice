@@ -1,9 +1,9 @@
 from datetime import timedelta, datetime
 from kabusapi import KabustationApi
-from ticks_handling import TicksInsertHandler
+from ticks_handle import TicksInsertHandler
 from mongodb import MongoDBManager
-from get_gmail import GetOrderFromGmailApiHandler
-from utility import time_it,DateTimeParser
+from get_gmail import FetchOrderFromGmailApiHandler
+from utility import time_it, DateTimeParser, handle_exception
     
 @time_it
 def insert_kabusapi_order(today_microsec):
@@ -19,30 +19,29 @@ def insert_kabusapi_order(today_microsec):
         # アップサートのキーを定義
         upsert_key = ['ID']
         kabusdb.insert_upsert(api_datas, upsert_key)
-    except Exception as e:
-        print(f'kabustation api から odersをインサートするところでエラーです: {e}')
-
+    except Exception:
+        handle_exception()
 @time_it
 def insert_gmail_order(today_str):
     try:
         start_datetime_str = today_str + ' 00:00:00'
         end_datetime_str = today_str + ' 15:10:00'
         print(f'gmail_startdate: {start_datetime_str},end_date: {end_datetime_str}')
-        gmail_handler =GetOrderFromGmailApiHandler()
+        gmail_handler =FetchOrderFromGmailApiHandler()
         gmail_handler.add_datetime_to_query(start_datetime_str, end_datetime_str)
         # insertは upsert処理
         gmail_handler.exec()
-    except Exception as e:
-        print(f'gmail から odersをインサートするところでエラーです: {e}')
+    except Exception:
+        handle_exception()
         
 @time_it
 def insert_ticks(yesterday):
-        # ! insertはバッチ処理なので　重複に注意
+        # ! insert_ticksはバッチ処理なので　重複に注意
     try:
         ticks_handler = TicksInsertHandler()
         ticks_handler.insert_after_processed(yesterday)
-    except Exception as e:
-        print(f'ticksをインサートするところでエラーです: {e}')
+    except Exception:
+        handle_exception()
 
 
 if __name__ == '__main__':  

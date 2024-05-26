@@ -29,17 +29,7 @@ class TicksJsonFileInfo:
             files_data.append(data)
 
         files_data.sort( key=lambda x: x['date_str'])     # date_strでソートする implace で返こするため lost.sort()
-        return files_data
-
-    def iter_files_info(self, func):
-        item_iter = self._yield_files()
-        for item_tuple in item_iter :
-            func(item_tuple[0], item_tuple[1])
-    
-    def _yield_files_info(self):
-        for file in self.files:
-            date_str = re.search(r'(\d{8})', file).group(1)
-            yield file, date_str    
+        return files_data 
             
     def rename_file_with_date(self):
         for file in self.files:
@@ -71,7 +61,7 @@ class TicksInsertToMongo:
             data = json.load(file)
             return data
         
-    def data_mapping(self, data, date_convert):
+    def data_mapping_iter(self, data, date_convert):
         for code, ticks in data['ticks'].items():
             documents=[]
             collection_name = code  #銘柄コード
@@ -85,24 +75,24 @@ class TicksInsertToMongo:
                     'kind': tick['k'],
                 }
                 documents.append(document)
-            return collection_name, documents
+            yield collection_name, documents
         
     def exec(self, file_path, date_str):
     
-        data = self.read_json(file_path)                           #jsonfile の 読込
-        parser = DateTimeParser(date_str)
-        date_convert = parser.microsce                      #日付データをmicrosecへ変換　外部関数
-        collection_name, documents = self.data_mapping(data, date_convert)  # data を mapping
+        date_parser = DateTimeParser(date_str)
+        date_convert = date_parser.microsec                      #日付データをmicrosecへ変換　外部関数
+        data = self.read_json(file_path)                           #jsonfile の 読込        
+        iter = self.data_mapping_iter(data, date_convert)  # data を mapping
 
-        if documents:    
-            self.db.select_collection(collection_name)                      
-            self.db.insert_batch(documents)
-                
+        for collection_name, documents in iter:
+            if documents:    
+                self.db.select_collection(collection_name)                      
+                self.db.insert_batch(documents)
+                    
 
 class TicksInsertHandler:
     def __init__(self):
         glob_obj = TicksJsonFileInfo()
-
         self.files_data = glob_obj.get_files_info()      # files_info_list は {file_path: hoge , date_str: fuga} のリスト
         self.mongo_obj = TicksInsertToMongo()    
 
@@ -119,7 +109,7 @@ class TicksInsertHandler:
 
                 if processed_d < file_date:
                     print(f'以下のjsonを処理します: {file_info["file_path"]}')
-                    pdb.set_trace()
+                    #pdb.set_trace()
 
                     self.mongo_obj.exec(file_info['file_path'], file_info['date_str'])
                     c=c+1
@@ -141,18 +131,27 @@ class TicksInsertHandler:
         
 
 class TicksTakeOutHandler:
+    '''
+    DFを作成する 
+    '''
     def __init__(self):
         db_name ='kabu_ticks'
         self.db = MongoDBManager(db_name)
         self.datas = None
+        self.df = None
+        
     def read_from_mongo(self, code, query =None):
         collectiton_name = code
         self.db.select_collection(collectiton_name)
         self.df = pd.DataFrame(self.db.find(query))                        #db.find() はreturn を含んでいる
     
     def make_query(self):
+        # フィルタ $lt(less than 未満) $gt(greater than より大きい ) $lte(less than or equal to)
+        # $gte(greater than or equal to) $ne (not  equal)
+        
         pass
-    def formatting(self):
+    
+    def format_df(self):
         self.df['timestamp'] = self.df['timestamp'].apply(lambda x: datetime.fromtimestamp(x / 1_000_000))
         self.df['Date'] = self.df['timestamp'].dt.date
         self.df['Time'] = self.df['timestamp'].dt.time
@@ -162,9 +161,9 @@ class TicksTakeOutHandler:
         
     def exec(self, code):
         self.read_from_mongo(code)
-        self.formatting()
+        self.format_df()
 
-class TicksReadFromJson:
+class TicksReadFromJsonFile:
 
     def __init__(self):
         file_obj = TicksJsonFileInfo()
@@ -217,6 +216,6 @@ if __name__ == '__main__':
     #print(read_obj.file_info)
     
 
-    obj = TicksTakeOutHandling()
+    obj = TicksTakeOutHandler()
     obj.read_from_mongo('9509')
     print(obj.datas)

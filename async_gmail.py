@@ -8,7 +8,7 @@ from mongodb import MongoDBManager
 from utility import time_it, DateTimeParser
 import pdb
 
-# 作成途中 時間短縮のため
+# TODO 作成途中  同期処理で時間短縮を目指す
 def fetch_and_save_email_data(executor, service, db_manager, user_id, query):
     try:
         

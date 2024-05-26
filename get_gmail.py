@@ -3,13 +3,12 @@ import sys
 import pickle
 import base64
 import re
-from datetime import datetime, timezone, timedelta
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from mongodb import MongoDBManager
-from  utility import time_it, DateTimeParser 
+from  utility import time_it, DateTimeParser ,handle_exception
 import pdb
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
@@ -39,8 +38,8 @@ class GmailApi:
                 # 新しいトークンを保存
                 with open('token.pickle', 'wb') as token:
                     pickle.dump(creds, token)
-        except Exception as e:
-            print(f"トークンのリフレッシュに失敗しました: {e}")
+        except Exception:
+            handle_exception()
             # 既存のトークンファイルが問題の原因かもしれないため削除
             if os.path.exists('token.pickle'):
                 os.remove('token.pickle')
@@ -82,7 +81,6 @@ class Parse_email_content_orders:
         pass
     
     def body_content(self, full_message):
-        
         parts = full_message['payload'].get('parts', [])
         message_id = full_message.get('id')
         body_content = {}
@@ -105,16 +103,13 @@ class Parse_email_content_orders:
     def parse_email_content(self, html_content, message_id):
         data = {}
         data['gmail_id'] = message_id
-
         # 約定しましたの後の行二段下げから次の行二段下げまでの間を抽出
         pattern = r'約定しました。<br/><br/>(.*?)<br/><br/>'
         match = re.search(pattern, html_content, re.DOTALL)
         if match:
             details = match.group(1).split('<br/>')
-
             # 日時
             data['日時'] = details[0].strip()
-
             # CXJ9509／北海道電力
             market_info = details[1].strip()
             market_parts = market_info.split('／')
@@ -123,13 +118,11 @@ class Parse_email_content_orders:
                 data['市場'] = code_parts.group(1)
                 data['銘柄CD'] = code_parts.group(2)
             data['銘柄'] = market_parts[1].strip()
-
             # 信用返済買い／指値
             transaction_info = details[2].strip()
             transaction_parts = transaction_info.split('／')
             data['取引種類'] = transaction_parts[0].strip()
             data['指値/成行'] = transaction_parts[1].strip()
-
             # その後の改行から二段下げまでの間
             additional_info = details[3:]
             for info in additional_info:
@@ -137,18 +130,18 @@ class Parse_email_content_orders:
                     key_value = info.strip().split(' ')
                     if len(key_value) == 2:
                         data[key_value[0]] = key_value[1]
-
         return data       
 
 
-class GetOrderFromGmailApiHandler:
+class FetchOrderFromGmailApiHandler:
     def __init__(self):
         db_name = 'stock_kabu'
         self.db_orders = MongoDBManager(db_name, 'orders_on_gmail')
         self.db_html = MongoDBManager(db_name, 'orders_html')
         self.query ='from:support@kabu.com subject:"【auKabucom】約定通知 "'
         self.parse_obj = Parse_email_content_orders()
-    
+        self.body_contents = []
+        self.htmls =[]
     @time_it
     def exec(self):
         upsert_key=['gmail_id']
@@ -157,11 +150,14 @@ class GetOrderFromGmailApiHandler:
             message_iter = gmail_api.get_message_iter(self.query)
             for message in message_iter:
                 item_tuple = self.parse_obj.body_content(message)
-                
-                self.db_orders.insert_upsert(item_tuple[0], upsert_key)
-                self.db_html.insert_upsert(item_tuple[1], upsert_key)
-        except Exception as e:
-            print(f'class GetOdersFromGmailApiHander def exec でエラーです {e}')
+                self.body_contents.append(item_tuple[0])
+                self.htmls.append(item_tuple[1])
+            self.db_orders.insert_upsert(self.body_contents, upsert_key)
+            self.db_html.insert_upsert(self.htmls, upsert_key)
+            self.body_contents = []
+            self.htmls =[]
+        except Exception:
+            handle_exception()
             raise
         
             
@@ -169,21 +165,20 @@ class GetOrderFromGmailApiHandler:
         # datetime はstr '2024/05/22 00:00:00'
         try:
             #pdb.set_trace()
-            #gmail api は unixtimeで指定
-            
+            #gmail api は unixtimeで指定 
             parser_after = DateTimeParser(start_datetime_str)
             after = parser_after.unix_time
             parser_befor = DateTimeParser(end_datetime_str)
             before = parser_befor.unix_time
             self.query = self.query + f' after:{after} before:{before}'
-        except Exception as e:
-            print(f'class GetOdersFromGmailApiHander def add_datetime_to_query でエラーです {e}')
+        except Exception:
+            handle_exception()
             raise
 
 
 if __name__ == '__main__':
-    start_datetime = '20240522 00:00:00'
-    end_datetime = '20240522 15:30:00'
-    gmail_handler = GetOrderFromGmailApiHandler()
+    start_datetime = '20240524 00:00:00'
+    end_datetime = '20240524 15:30:00'
+    gmail_handler = FetchOrderFromGmailApiHandler()
     gmail_handler.add_datetime_to_query(start_datetime,end_datetime)
     gmail_handler.exec()

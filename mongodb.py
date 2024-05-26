@@ -2,7 +2,7 @@ from pymongo import MongoClient, UpdateOne
 import os
 import time
 import pandas as pd
-from utility import time_it
+from utility import time_it, handle_exception
 import pdb
 
 class MongoDBManager:
@@ -25,40 +25,38 @@ class MongoDBManager:
         return self.db.list_collection_names()
 
     def insert_batch(self, datas):
-        result = self.collection.insert_many(datas)
-        print(type(result))
-        print(f'collection : {self.collection}')
-        print(f'batch処理しました 最初のデータ{datas[0]}')
+        try:
+            result = self.collection.insert_many(datas)
+            print(type(result))
+            print(f'collection : {self.collection}')
+            print(f'batch処理しました 最初のデータ{datas[0]}')
+        except Exception:
+            handle_exception()
             
-    def insert_upsert(self, data, upsert_key):
-        # upsert_keyは、リストで取得 ex ['ID', 'user'] 
-        # バルク操作のためのリストを初期化
-        c=0
-        bulk_operations = []
-        c=c+1
+    def insert_upsert(self, datas, upsert_key):
+        # upsert_keyは、リストで取得 ex ['ID', 'user']         
+        bulk_operations = []            # バルク操作のためのリストを初期化
+        try:
+            for data in datas:
+                upsert_key_dict = {k: data[k] for k in upsert_key if k in data}
+                operation = UpdateOne(upsert_key_dict, {'$set':data}, upsert=True)
+                bulk_operations.append(operation)
+        #except Exception as e:
+        #    print(f'mongodbmanager の insert_upsert で エラーが発生しました count : {c} その時のdata : {data}')    
+        # バルク操作の実行
+            if bulk_operations:
+                result = self.collection.bulk_write(bulk_operations)    
+                print(f'type(result)  count: {result.count}  --matched :{result.matched_count} -- modified :{result.modified_count}')
+        except Exception:
+            handle_exception()    
+            
+    def insert_upsert_one(self, data, upsert_key):
         try:
             upsert_key_dict = {k: data[k] for k in upsert_key if k in data}
-            operation = UpdateOne(upsert_key_dict, {'$set':data}, upsert=True)
-            bulk_operations.append(operation)
-        except Exception as e:
-            print(f'mongodbmanager の insert_upsert で エラーが発生しました count : {c} その時のdata : {data}')
-            
-        # バルク操作の実行
-        if bulk_operations:
-
-            self.collection.bulk_write(bulk_operations)    
-            
-    def check_summary(self):
-        end_count = self.collection.count_documents({})
-        newdata_count = end_count - self.start_count
-        print(f'追加したデータ数:{newdata_count}')
-        if newdata_count >1 :
-            print(f'追加した最初のデータ:{self.collection.find().skip(self.start_count +1)}')
-            print(f'追加した最後のデータ:{self.collection.find().skip(end_count)}')
-        elif newdata_count==0:
-            print(f'追加データはありません')
-        else:
-            print(f'追加データは以下の1件です:{self.collection.find().skip(end_count)}')
+            result = self.collection.update_one(upsert_key_dict, {'$set':data}, upsert=True)
+            print(f'{type(result)} ')
+        except Exception:
+            handle_exception()
             
     def check_unique_field(self):
         all_keys = set()

@@ -13,12 +13,15 @@ class PlotStepValue:
     # price:    float
     # quantity : int
     # その他はあっても良い
-    def __init__(self, moto_df, interval, time_unit ):
+    def __init__(self, moto_df, interval, time_unit, other_data_dict =None ):
         self.cal = Japan()
         self.interval_set, self.title_unit = self._set_interval( interval, time_unit )
         self.df_resampled = self._resample_df(moto_df)
         self.interval_str = str(interval)
         self.plot_args = None
+        self.addplot = []
+        self.other_data_dict = other_data_dict, None
+
     
     def _set_interval(self, interval, time_unit ):
         # time_unit のマッピングを辞書で定義
@@ -82,17 +85,26 @@ class PlotStepValue:
             handle_exception()
             raise
           
-    def _get_addplot(self):
-        addplot =[]      
+    def _get_addplot_sma(self):
         if self.df_resampled['SMA_20'].notna().any():
-            addplot.append(mpf.make_addplot(self.df_resampled['SMA_20'], color='blue', linestyle='--'))
+            self.addplot.append(mpf.make_addplot(self.df_resampled['SMA_20'], color='blue', linestyle='--'))
 
         # SMA_50が存在し、有効なデータがあるか確認
         if self.df_resampled['SMA_50'].notna().any():
-            addplot.append(mpf.make_addplot(self.df_resampled['SMA_50'], color='orange', linestyle='--'))
+            self.addplot.append(mpf.make_addplot(self.df_resampled['SMA_50'], color='orange', linestyle='--'))
         
-        return addplot
-        
+
+    def _add_other_data(self):
+        # TODO  検証未了　
+        # otherdataの dfのカラム名 
+        other_df = self.other_data_dict.get('df')
+        other_df_column_name = self.other_data_dict.get('column_name')
+        other_title = self.other_data_dict.get('title')
+        other_args = self.other_data_dict.get('args')
+        if not other_args:
+            other_args= {'type':'scatter', 'markersize':200, 'marker':'^', 'color':'red'}
+        self.addplot.append(mpf.make_addplot(other_df, **other_df_column_name))
+    
     def _set_argument(self, s, addplot):
         self.plot_args = {
             'type': 'candle',
@@ -105,14 +117,16 @@ class PlotStepValue:
         }
         if addplot:
             self.plot_args['addplot']=addplot
-    
+                
     def plot_candlestick(self):
         # カスタムスタイルの設定
         mc = mpf.make_marketcolors(up='r', down='g', edge='i', wick='i', volume='in', inherit=True)
         s = mpf.make_mpf_style(marketcolors=mc, gridstyle=':', gridcolor='gray')
         # 移動平均線の追加
-        addplot = self._get_addplot()
-        self._set_argument(s, addplot)
+        self._get_addplot_sma()
+        if self.other_data_dict:
+            self._add_other_data()      
+        self._set_argument(s)
         # ローソクチャートを描画
         mpf.plot(self.df_resampled, **self.plot_args)
 

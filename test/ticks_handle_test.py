@@ -1,4 +1,4 @@
-from ticks_handle import TicksJsonFileInfo, TicksInsertToMongo, TicksReadFromJsonFile, TicksTakeOutHandler, \
+from ticks_handle import TicksJsonFileInfo, TicksInsertToMongo, TicksReadFromJsonFile, TicksExtractHandler, \
                         TicksInsertHandler
 from utility import DateTimeParser, print_dict_structure, handle_exception
 
@@ -47,13 +47,13 @@ def test_ticks_insert_handler():
 
 
 def test_ticks_takeout_handler():
-    takeout_obj = TicksTakeOutHandler()
-    code ='9509'
+    takeout_obj = TicksExtractHandler()
+    code_str ='9509'
     try:
-        takeout_obj.exec(code)
+        takeout_obj.exec(code_str)
     except:
         handle_exception()
-    print('--------------TicksTakeoutHandler def exec のテスト---------------')
+    print('--------------TicksExtractHandler def exec のテスト---------------')
     print(f'df head(2): {takeout_obj.df.head(2)}')   
     
 

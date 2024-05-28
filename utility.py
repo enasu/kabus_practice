@@ -8,7 +8,7 @@ def time_it(func):
         start_time = time.time()
         result = func(*args, **kwargs)
         end_time = time.time()
-        print(f"{func.__name__} の実行時間: {end_time - start_time:.6f} 秒")
+        print(f"{func.__qualname__} の実行時間: {end_time - start_time:.6f} 秒")
         return result
     return wrapper
 

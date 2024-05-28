@@ -9,9 +9,9 @@ from utility import time_it, DateTimeParser, handle_exception
 def insert_kabusapi_order(today_microsec):
     try:
         params={
-            'product': 0 ,
+            'product': "0" ,
             'updtime': today_microsec,
-            'state':5
+            'state':"5"
         }
         kabustation_api = KabustationApi(stage='honban')
         api_datas = kabustation_api.fetch_orders(params=params)
@@ -39,6 +39,7 @@ def insert_ticks(yesterday):
         # ! insert_ticksはバッチ処理なので　重複に注意
     try:
         ticks_handler = TicksInsertHandler()
+        # TODO  get error yesterday format
         ticks_handler.insert_after_processed(yesterday)
     except Exception:
         handle_exception()
@@ -47,16 +48,17 @@ def insert_ticks(yesterday):
 if __name__ == '__main__':  
     # 現在の日付と時刻
     dt_now = datetime.now()
-    today_str = dt_now.strftime('%Y%m%d') 
+    today_str = dt_now.strftime('%Y%m%d')
+    date_time_str = dt_now.strftime('%Y%m%d%H%M%S')
     today_microsec = int(dt_now.timestamp() * 1_000_000)
     yesterday = dt_now - timedelta(days=1)
     yesterday_str = yesterday.strftime('%Y%m%d')
     
     # kabustationからorder情報を mongodbへ保存
-    insert_kabusapi_order(today_microsec)
+    insert_kabusapi_order(date_time_str)
     
-    # # # gmailから order情報をmongodbへ保存
+    # gmailから order情報をmongodbへ保存
     insert_gmail_order(today_str)
     
     # Briskから取得した歩み値をmongodbへ保存
-    insert_ticks(yesterday)
+    insert_ticks(yesterday_str)

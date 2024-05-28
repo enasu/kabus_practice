@@ -46,7 +46,7 @@ class MongoDBManager:
         # バルク操作の実行
             if bulk_operations:
                 result = self.collection.bulk_write(bulk_operations)    
-                print(f'type(result)  count: {result.count}  --matched :{result.matched_count} -- modified :{result.modified_count}')
+                print(f'type(result) --matched :{result.matched_count} -- modified :{result.modified_count}')
         except Exception:
             handle_exception()    
             

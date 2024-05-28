@@ -62,9 +62,9 @@ class TicksInsertToMongo:
             return data
         
     def data_mapping_iter(self, data, date_convert):
-        for code, ticks in data['ticks'].items():
+        for code_str, ticks in data['ticks'].items():
             documents=[]
-            collection_name = code  #銘柄コード
+            collection_name = code_str  #銘柄コード　ここでは str
             for tick in ticks:
                 # マッピング情報を用いてデータを再構成            
                 document = {
@@ -99,6 +99,7 @@ class TicksInsertHandler:
     @time_it    
     def insert_after_processed(self, processed_date): 
         c = 0
+        
         if processed_date:
             if not isinstance(processed_date, str):
                 processed_date =str(processed_date)
@@ -122,7 +123,7 @@ class TicksInsertHandler:
         '''
         file_info = self.files_data[num]
         print(f'以下のjsonを処理します: {file_info["file_path"]}')
-        self.exec_obj.exec(file_info['file_path'], file_info['date_str'])
+        self.mongo_obj.exec(file_info['file_path'], file_info['date_str'])
         
     def print_files(self):
         # insert_oneのhelper
@@ -130,7 +131,7 @@ class TicksInsertHandler:
             print(f' {c-1}: {self.files_data}')
         
 
-class TicksTakeOutHandler:
+class TicksExtractHandler:
     '''
     DFを作成する 
     '''
@@ -140,18 +141,17 @@ class TicksTakeOutHandler:
         self.datas = None
         self.df = None
         
-    def read_from_mongo(self, code, query =None):
-        collectiton_name = code
+    def _read_from_mongo(self, code, query =None):
+        collectiton_name = str(code)
         self.db.select_collection(collectiton_name)
         self.df = pd.DataFrame(self.db.find(query))                        #db.find() はreturn を含んでいる
     
     def make_query(self):
         # フィルタ $lt(less than 未満) $gt(greater than より大きい ) $lte(less than or equal to)
         # $gte(greater than or equal to) $ne (not  equal)
-        
         pass
     
-    def format_df(self):
+    def _format_df(self):
         self.df['timestamp'] = self.df['timestamp'].apply(lambda x: datetime.fromtimestamp(x / 1_000_000))
         self.df['Date'] = self.df['timestamp'].dt.date
         self.df['Time'] = self.df['timestamp'].dt.time
@@ -160,8 +160,8 @@ class TicksTakeOutHandler:
         self.df.drop('_id', axis=1, inplace=True)
         
     def exec(self, code):
-        self.read_from_mongo(code)
-        self.format_df()
+        self._read_from_mongo(code)
+        self._format_df()
 
 class TicksReadFromJsonFile:
 
@@ -172,7 +172,7 @@ class TicksReadFromJsonFile:
     # TODO 関数にclass 名を付け init を作成した　後の関数は手つかず
     # TODO 一応 printして上の self.file_info は最新のものであることを確認している
     # TODO また file_pathと date_strを持っている        
-    def df_from_ticksjson(self, file_path, stock_code): 
+    def df_from_ticksjson(self, file_path, code_str): 
         # ファイルを開いて内容を読み込む
         #file_path = 'mnt_data/リスト1_Ticks20240517.json' を想定
         # stock_code は文字列 stock_code = '9509'
@@ -188,7 +188,7 @@ class TicksReadFromJsonFile:
         # mapの情報を取得
         map_info = data['map']
         # 銘柄コードに対応するデータを取得
-        ticks_data = data['ticks'][stock_code]
+        ticks_data = data['ticks'][code_str]
         self.df = pd.DataFrame(ticks_data)
         # map情報を使用してカラム名を設定
         self.df.rename(columns=map_info, inplace=True)
@@ -216,6 +216,6 @@ if __name__ == '__main__':
     #print(read_obj.file_info)
     
 
-    obj = TicksTakeOutHandler()
+    obj = TicksExtractHandler()
     obj.read_from_mongo('9509')
     print(obj.datas)

@@ -73,7 +73,7 @@ class KabustationApi:
 
         self.kabustation_token = content['Token']
     @time_it
-    def fetch_orders(self, params = { 'product': 0, 'state':5}):
+    def fetch_orders(self, params = { 'product': '0', 'state':'5'}):
         endpoint = '/orders'
         #params = { 'product': 0 }               # product - 0:すべて、1:現物、2:信用、3:先物、4:OP
         #params['id'] = '20201207A02N04830518' # id='xxxxxxxxxxxxxxxxxxxx'

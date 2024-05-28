@@ -99,10 +99,10 @@ class PlotStepValue:
         # otherdataの dfのカラム名 
         other_df = self.other_data_dict.get('df')
         other_df_column_name = self.other_data_dict.get('column_name')
-        other_title = self.other_data_dict.get('title')
+        other_label = self.other_data_dict.get('label')
         other_args = self.other_data_dict.get('args')
         if not other_args:
-            other_args= {'type':'scatter', 'markersize':200, 'marker':'^', 'color':'red'}
+            other_args= {'type':'scatter', 'markersize':200, 'marker':'^', 'color':'red', 'zorder':5}
         self.addplot.append(mpf.make_addplot(other_df, **other_df_column_name))
     
     def _set_argument(self, s, addplot):

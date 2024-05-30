@@ -15,6 +15,8 @@ class ExtractOrderGmail:
         # `支払金額` 列から '円' とカンマを取り除き、整数型に変換
         new_df.fillna({'支払金額':0, '受取金額':0},inplace=True)
         # `支払金額` 列から '円' とカンマを取り除き、NaNを0で置き換え、整数型に変換
+        new_df['約定単価'] = new_df['約定単価'].str.replace('円', '').str.replace(',', '').fillna(0).astype(float)
+        new_df['約定数量'] = new_df['約定数量'].str.replace('株', '').str.replace(',', '').fillna(0).astype(int)
         new_df['支払金額'] = new_df['支払金額'].str.replace('円', '').str.replace(',', '').fillna(0).astype(int)
         new_df['受取金額'] = new_df['受取金額'].str.replace('円', '').str.replace(',', '').fillna(0).astype(int)
         new_df['損益'] = new_df['受取金額'] + new_df['支払金額']
@@ -26,9 +28,13 @@ class ExtractOrderGmail:
         self.df = new_df
     
     
-def get_contract_df(code, entry_time, exit_time):
+def get_gmail_orders_df(code, entry_time, exit_time, plot_lib = 'matplot'):
+    #   plot_lib は mplfinance :'mpf' か matplot matplot 
         gmail_obj = ExtractOrderGmail()
         gmail_df = gmail_obj.df
+        print('---------------get_gmail_orders_df---------------------')
+        print(f'gmail_df.index(0) >>>{gmail_df.index[0]}  --- entry_time >>> {entry_time}')
+
         f_df =  gmail_df[(gmail_df.index >= entry_time) & (gmail_df.index <= exit_time) & (gmail_df['銘柄CD']==str(code)) ]
         
         type_dict_list = [
@@ -46,7 +52,22 @@ def get_contract_df(code, entry_time, exit_time):
             df = f_df[f_df['取引種類'] == trade_type]
             type_dict['df'] = df
             type_dict['column_name'] = '約定単価'
-            
+        
+        # mpfでは argsで指定できる引数に変更
+        if plot_lib == 'mpf':
+            for type_dict in type_dict_list:
+                args = type_dict['args']
+                args['markersize'] = args['s']
+                del args['s']
+                del args['label']
+                del args['zorder']
+                
+        elif plot_lib == 'matplot':
+            for type_dict in type_dict_list:
+                args = type_dict['args']
+                type_dict['plot_type'] = args['type']   #matplot は argsにtypeを持たない
+                del args['type']
+        
         return type_dict_list
             
             

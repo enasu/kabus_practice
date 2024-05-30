@@ -100,7 +100,7 @@ class KabustationApi:
         #    {'Symbol': '145123218', 'Exchange': 2}
         # ] }
         symbols_data = self.synbols_dict(symbols)
-        #pdb.set_trace()
+
         content = self._request(endpoint, params=symbols_data, method='PUT')
         pprint.pprint(content)
         

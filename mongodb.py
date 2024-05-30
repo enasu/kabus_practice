@@ -23,7 +23,8 @@ class MongoDBManager:
     def list_collection_names(self):
         # このメソッドを追加して、内部のdbオブジェクトからコレクション名を取得
         return self.db.list_collection_names()
-
+    
+    @time_it
     def insert_batch(self, datas):
         try:
             result = self.collection.insert_many(datas)
@@ -32,7 +33,8 @@ class MongoDBManager:
             print(f'batch処理しました 最初のデータ{datas[0]}')
         except Exception:
             handle_exception()
-            
+    
+    @time_it
     def insert_upsert(self, datas, upsert_key):
         # upsert_keyは、リストで取得 ex ['ID', 'user']         
         bulk_operations = []            # バルク操作のためのリストを初期化
@@ -71,10 +73,12 @@ class MongoDBManager:
         document = self.collection.find_one(filter)
         return  document
     
+    @time_it
     def find(self,filter=None):
         document = self.collection.find(filter)
         return  document
 
+    @time_it
     def convert_pandas(self, filter=None):
         # TODO 別に移すか　削除する
         documents = self.collection.find(filter)

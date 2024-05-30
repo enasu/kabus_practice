@@ -110,7 +110,7 @@ class TicksInsertHandler:
 
                 if processed_d < file_date:
                     print(f'以下のjsonを処理します: {file_info["file_path"]}')
-                    #pdb.set_trace()
+
 
                     self.mongo_obj.exec(file_info['file_path'], file_info['date_str'])
                     c=c+1

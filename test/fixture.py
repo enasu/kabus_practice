@@ -1,4 +1,6 @@
 from ticks_handle import TicksExtractHandler
+import matplotlib.pyplot as plt
+import pdb
 
 def fixture_date_set():
         code = 9509
@@ -23,3 +25,32 @@ def fixture_date_set():
                                 ]
         
         return setups
+
+# test用
+def plot_df_test(data_dict):
+        plt.figure(figsize=(20,8))        
+        df = data_dict.get('df')
+        if df is None or df.empty:
+                raise ValueError('DataFrame is empty or not provided')
+        x = df.index
+        y = df['約定単価']
+        args = data_dict['args']
+        
+        plot_type =data_dict.get('plot_type')
+        if plot_type:
+                # matplot 
+                if plot_type =='scatter':
+                        args.pop('type', None)  # 'type'を削除
+                        plt.scatter(x,y, **args)
+                
+                #elif args['type']=='line':
+                else:
+                        args.pop('type', None)  # 'type'を削除
+                        plt.plot(x, y, **args)
+                
+        else:
+                # TODO 一応 mpf を想定しているが下のコードは対応していない 　mpfの場合 date_dictの構造が違う
+                plt.plot(df, **args)
+                
+        
+        plt.show()   

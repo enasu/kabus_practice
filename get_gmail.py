@@ -164,7 +164,6 @@ class FetchOrderFromGmailApiHandler:
     def add_datetime_to_query(self, start_datetime_str, end_datetime_str):
         # datetime はstr '2024/05/22 00:00:00'
         try:
-            #pdb.set_trace()
             #gmail api は unixtimeで指定 
             parser_after = DateTimeParser(start_datetime_str)
             after = parser_after.unix_time

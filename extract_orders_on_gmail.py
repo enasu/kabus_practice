@@ -1,4 +1,6 @@
 from mongodb import MongoDBManager
+import matplotlib.pyplot as plt
+import mplfinance as mpf
 import pandas as pd
 import pdb
 
@@ -27,47 +29,43 @@ class ExtractOrderGmail:
         
         self.df = new_df
     
-    
-def get_gmail_orders_df(code, entry_time, exit_time, plot_lib = 'matplot'):
+    def get_drow_obj_list(self, code, entry_time, exit_time, plot_lib = 'matplot'):
     #   plot_lib は mplfinance :'mpf' か matplot matplot 
-        gmail_obj = ExtractOrderGmail()
-        gmail_df = gmail_obj.df
-        print('---------------get_gmail_orders_df---------------------')
-        print(f'gmail_df.index(0) >>>{gmail_df.index[0]}  --- entry_time >>> {entry_time}')
 
-        f_df =  gmail_df[(gmail_df.index >= entry_time) & (gmail_df.index <= exit_time) & (gmail_df['銘柄CD']==str(code)) ]
+        print('---------------get_drow_obj_list---------------------')
+        print(f'self.df.index(0) >>>{self.df.index[0]}  --- entry_time >>> {entry_time}')
+
+        f_df =  self.df[(self.df.index >= entry_time) & (self.df.index <= exit_time) & (self.df['銘柄CD']==str(code)) ]
         
         type_dict_list = [
                 {'trade_type':'信用新規買い',
-                 'args':{'type': 'scatter', 'color': 'blue', 'marker':'^', 's':100,'zorder':5, 'label':'entry buy'}},
+                    'args':{'type': 'scatter', 'color': 'blue', 'marker':'^', 's':100,'zorder':5, 'label':'entry buy'}},
                 {'trade_type':'信用返済売り',
-                 'args':{'type': 'scatter', 'color': 'blue', 'marker':'v', 's':100,'zorder':5, 'label':'exit sale'}},
+                    'args':{'type': 'scatter', 'color': 'blue', 'marker':'v', 's':100,'zorder':5, 'label':'exit sale'}},
                 {'trade_type':'信用新規売り',
-                 'args':{'type': 'scatter', 'color': 'yellow', 'marker':'^', 's':100,'zorder':5,'label':'entry sale'}},
+                    'args':{'type': 'scatter', 'color': 'yellow', 'marker':'^', 's':100,'zorder':5,'label':'entry sale'}},
                 {'trade_type':'信用返済買い',
-                 'args':{'type': 'scatter', 'color': 'yellow', 'marker':'v', 's':100,'zorder':5,'label':'exit buy'}},
+                    'args':{'type': 'scatter', 'color': 'yellow', 'marker':'v', 's':100,'zorder':5,'label':'exit buy'}},
                 ]
+        drow_obj_list = []
+                # ローソク足の場合は、indextimestampだと x,y size が違うとエラーがでるので現状使えない
+                # ローソク足と同じ時間軸にできないか検討する　⇒　同じローソク足の中に複数の値を描画できない
+                # plot_lib == 'mpf'は削除
         for type_dict in type_dict_list:
             trade_type = type_dict.get('trade_type')
             df = f_df[f_df['取引種類'] == trade_type]
-            type_dict['df'] = df
             type_dict['column_name'] = '約定単価'
-        
-        # mpfでは argsで指定できる引数に変更
-        if plot_lib == 'mpf':
-            for type_dict in type_dict_list:
-                args = type_dict['args']
-                args['markersize'] = args['s']
-                del args['s']
-                del args['label']
-                del args['zorder']
-                
-        elif plot_lib == 'matplot':
-            for type_dict in type_dict_list:
-                args = type_dict['args']
-                type_dict['plot_type'] = args['type']   #matplot は argsにtypeを持たない
-                del args['type']
-        
-        return type_dict_list
+            plot_args = type_dict['args']
+            type_dict['plot_type'] = plot_args['type']   #matplot は argsにtypeを持たない
+            del plot_args['type']
+
+            x = df.index
+            y = df['約定単価']
             
-            
+            drow_obj_list.append(plt.scatter(x, y, **plot_args))
+
+        return drow_obj_list
+
+
+        
+        

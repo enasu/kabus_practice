@@ -13,14 +13,15 @@ class PlotStepValue:
     # price:    float
     # quantity : int
     # その他はあっても良い
-    def __init__(self, moto_df, interval, time_unit, other_data_dict_list =None ):
+    
+    def __init__(self, moto_df, interval, time_unit,other_data_drow_obj_list =None ):
         self.cal = Japan()
         self.interval_set, self.title_unit = self._set_interval( interval, time_unit )
         self.df_resampled = self._resample_df(moto_df)
         self.interval_str = str(interval)
         self.plot_args = None
         self.addplot = []
-        self.other_data_dict_list = other_data_dict_list
+        self.other_data_drow_obj_list =other_data_drow_obj_list
 
     
     def _set_interval(self, interval, time_unit ):
@@ -93,24 +94,14 @@ class PlotStepValue:
         if self.df_resampled['SMA_50'].notna().any():
             self.addplot.append(mpf.make_addplot(self.df_resampled['SMA_50'], color='orange', linestyle='--'))
             
-        
-
     def _add_other_data(self):
         # TODO  検証未了
         print('--------------- def _add_order_data ----------------')
-        if self.other_data_dict_list:
-            for other_data_dict in self.other_data_dict_list:
-                print(f'_add_other_data で self.other_data_dict_list >>> {type(self.other_data_dict_list)}')
-                # otherdataの dfのカラム名 
-                other_df = other_data_dict.get('df')
-                #other_df_column_name = other_data_dict.get('column_name')
-                other_args = other_data_dict.get('args')
-                if not other_args:
-                    other_args= {'type':'scatter', 'markersize':200, 'marker':'^', 'color':'red', 'zorder':5}
-
-                self.addplot.append(mpf.make_addplot(other_df, **other_args))
-            
-        
+        if self.other_data_drow_obj_list:
+        #    for other_data_obj in self.other_data_drow_obj_list:
+        # self.addplot.append(other_data_obj)
+            other_data_obj = self.other_data_drow_obj_list[1]
+            self.addplot.append(other_data_obj)
     def _set_argument(self):
         # カスタムスタイルの設定 ローソク足
         mc = mpf.make_marketcolors(up='g', down='r', edge='i', wick='i', volume='in', inherit=True)
@@ -129,12 +120,9 @@ class PlotStepValue:
             self.plot_args['addplot'] = self.addplot
                 
     def plot_candlestick(self):
-        # カスタムスタイルの設定
-        mc = mpf.make_marketcolors(up='r', down='g', edge='i', wick='i', volume='in', inherit=True)
-        s = mpf.make_mpf_style(marketcolors=mc, gridstyle=':', gridcolor='gray')
         # 移動平均線の追加
-        self._get_addplot_sma()
-        if self.other_data_dict_list:
+        #self._get_addplot_sma()
+        if self.other_data_drow_obj_list:
             self._add_other_data()
         self._set_argument()
         # ローソクチャートを描画

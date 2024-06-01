@@ -1,7 +1,7 @@
 from plot_step_val import PlotStepValue
-from test.fixture import fixture_date_set, plot_df_test
+from test.fixture import fixture_date_set
 from utility import DateTimeParser, handle_exception
-from test.extract_order_test import test_extract_order_on_gmail
+from extract_orders_on_gmail import ExtractOrderGmail
 from ticks_handle import TicksExtractHandler
 from datetime import datetime as dt
 import datetime                         # from datetime import datetime とは別のモジュール　timeメッソッドを持っている
@@ -14,6 +14,7 @@ def test_plot_step_value():
         code = 9509     
         ticks_obj = TicksExtractHandler()
         ticks_obj.exec(code)
+        gmail_obj = ExtractOrderGmail()
         df = ticks_obj.df
         try:
                 for set_up in setups:
@@ -29,25 +30,17 @@ def test_plot_step_value():
                         filtered_df = df[(df.index >= enter_time) & (df.index <= exit_time)]
                         print(f'set_up-{c} enter_date {enter_date}  == type{type(enter_date)}')
                         print(f'entar_time {enter_time}  == type: {type(enter_time)}')
+                        print(f'df.index[0] {df.index[0]}  == type: {type(df.index[0])}')
                         print(f' 期間 {enter_time}>>{exit_time}  time_unit : {time_unit}  interval : {interval} のPlotStepValue のテスト---------------')
                         
                         # other data を追加
-                        add_data_list = test_extract_order_on_gmail(code, enter_date, exit_date)
                         
-                        plot_obj = PlotStepValue(filtered_df, interval, time_unit, add_data_list)
-                        print(f'plot_obj.interval_set :{plot_obj.interval_set} === title : {plot_obj.title_unit}')                
-
-                        print(f'plot_obj.df_resampled のtype >>> {plot_obj.df_resampled.dtypes}')
-
- 
-                        order_df= add_data_list[1]['df']
-                        #pdb.set_trace()
-                        
-                        order_dict = {'df': order_df}
-                        plot_df_test(order_dict)  
+                        orher_data_drow_obj_list = gmail_obj.get_drow_obj_list(code, enter_time, exit_time,plot_lib='mpf')
+                        pdb.set_trace()
+                        plot_obj = PlotStepValue(filtered_df, interval, time_unit, orher_data_drow_obj_list)
 
 
-                        #plot_obj.plot_candlestick()
+                        plot_obj.plot_candlestick()
         except Exception:
                 handle_exception()
                 

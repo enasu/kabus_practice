@@ -1,12 +1,13 @@
-from extract_orders_on_gmail import ExtractOrderGmail, get_gmail_orders_df
-from test.fixture import fixture_date_set, plot_df_test
+from extract_orders_on_gmail import ExtractOrderGmail
+from test.fixture import fixture_date_set, plot_df_test, plot_drow_obj
 from utility import DateTimeParser
 from datetime import datetime as dt
 import datetime
 import pdb
 import pprint
 
-def test_extract_order_on_gmail(code, entry_time, exit_time):
+
+def get_mfp_obj_order_gmail(code, entry_time, exit_time):
     gmail_obj = ExtractOrderGmail()
     gmail_df = gmail_obj.df
     print(f'-----------------gmail_df -----------------')
@@ -22,24 +23,22 @@ def test_extract_order_on_gmail(code, entry_time, exit_time):
     # print(f'-----------------f_df -----------------')
     # print(f_df.head(2))
     
-    dict_list = get_gmail_orders_df(code, entry_time, exit_time, plot_lib='mpf')
+    drow_obj_list = gmail_obj.get_drow_obj_list(code, entry_time, exit_time, plot_lib='mpf')
     print('--------------- test_extract_order ----------------')
-    print(f'dict_listのtype >>> {type(dict_list)}')
-    print(f'dict_list[0]のtype >>> {type(dict_list[0])}')
+    print(f'  drow_obj_list  >>> {type(  drow_obj_list )}')
+    print(f'  drow_obj_list [0]のtype >>> {type(  drow_obj_list [0])}')
     #print(f'dict_list[0] >>> {dict_list[0]}')
     #pprint.pprint(dict_list)
     
     # plot_testに利用する
-    return dict_list
+    return drow_obj_list
 
-def test_get_gmail_orders_df(code, entry_time, exit_time):
-    gmail_dict_list = get_gmail_orders_df(code, entry_time, exit_time, plot_lib='matplot')
-    for gmail_dict in gmail_dict_list:
+def test_et_drow_obj_list(code, entry_time, exit_time):
+    gmail_obj =ExtractOrderGmail()
+    drow_obj_list = gmail_obj.get_drow_obj_list(code, entry_time, exit_time, plot_lib='matplot')
+    for drow_obj in drow_obj_list:
         
-        plot_df_test(gmail_dict)
-
-
-
+        plot_drow_obj(drow_obj)
 
 
 
@@ -57,7 +56,7 @@ if __name__ == '__main__':
 
     code =9509
     
-    test_extract_order_on_gmail(code, entry_time, exit_time)
+    #get_mfp_obj_order_gmail(code, entry_time, exit_time)
     
-    # scatter図の描写　addplot用のデータ gmailからの order 
-    test_get_gmail_orders_df(code, entry_time, exit_time)
+    # scatter図の描写　addplot用のデータ gmailからの order を想定
+    test_et_drow_obj_list(code, entry_time, exit_time)

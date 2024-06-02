@@ -48,35 +48,8 @@ def test_plot_step_value():
                 handle_exception()
                 
 
-def get_plot_object_timestamp_simple():
-    df = pd.DataFrame({
-    '約定単価': [100, 200, 300, 400, 500],
-    '日付': pd.date_range(start='2024-06-01', periods=5, freq='D')
-    })
-    df.set_index('日付', inplace=True)
-
-    # クラスのインスタンスを作成してプロットを行う
-    plotter = GetPlotObjTimeStamp(df)
-    plotter.get_period(pd.Timestamp('2024-06-02'), pd.Timestamp('2024-06-04')) 
-    
-
-def get_plot_object_timestamp():
-        code=9509
-        ticks_obj = TicksExtractHandler()
-        ticks_obj.exec(str(code))
-        ticks_df = ticks_obj.df
-        
-        start_time = pd.to_datetime('2024-05-30 09:00:00.000000')
-        end_time = pd.to_datetime('2024-05-30 10:00:00.000000')
-        gmail_obj = ExtractOrderGmail()
-        other_draw_data_list = gmail_obj.get_other_data_list(code, start_time, end_time, plot_lib="matplot")
-        
-        plot_obj = GetPlotObjTimeStamp(ticks_df, other_draw_data_list)
-        plot_obj.get_plot(start_time, end_time)
 
 
 if __name__ == '__main__':
-        #test_plot_step_value()
+        test_plot_step_value()
 
-        #get_plot_object_timestamp_simple()
-        get_plot_object_timestamp()

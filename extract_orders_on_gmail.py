@@ -40,9 +40,9 @@ class ExtractOrderGmail:
         
         type_dict_list = [
                 {'trade_type':'信用新規買い',
-                    'args':{'type': 'scatter', 'color': 'orange', 'marker':'^','zorder':5, 'label':'entry buy'}},
+                    'args':{'type': 'scatter', 'color': 'green', 'marker':'^','zorder':5, 'label':'entry buy'}},
                 {'trade_type':'信用返済売り',
-                    'args':{'type': 'scatter', 'color': 'orange', 'marker':'v','zorder':5, 'label':'exit sale'}},
+                    'args':{'type': 'scatter', 'color': 'green', 'marker':'v','zorder':5, 'label':'exit sale'}},
                 {'trade_type':'信用新規売り',
                     'args':{'type': 'scatter', 'color': 'yellow', 'marker':'^','zorder':5,'label':'entry sale'}},
                 {'trade_type':'信用返済買い',

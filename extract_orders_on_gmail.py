@@ -40,9 +40,9 @@ class ExtractOrderGmail:
         
         type_dict_list = [
                 {'trade_type':'信用新規買い',
-                    'args':{'type': 'scatter', 'color': 'green', 'marker':'^','zorder':5, 'label':'entry buy'}},
+                    'args':{'type': 'scatter', 'color': 'red', 'marker':'^','zorder':5, 'label':'entry buy'}},
                 {'trade_type':'信用返済売り',
-                    'args':{'type': 'scatter', 'color': 'green', 'marker':'v','zorder':5, 'label':'exit sale'}},
+                    'args':{'type': 'scatter', 'color': 'red', 'marker':'v','zorder':5, 'label':'exit sale'}},
                 {'trade_type':'信用新規売り',
                     'args':{'type': 'scatter', 'color': 'yellow', 'marker':'^','zorder':5,'label':'entry sale'}},
                 {'trade_type':'信用返済買い',
@@ -59,9 +59,7 @@ class ExtractOrderGmail:
             plot_args = type_dict['args']
             del plot_args['type']
        
-            x = df.index
-            y = df['約定単価']
-            other_data_list.append([x, y, plot_args])
+            other_data_list.append([df, plot_args])
 
         return other_data_list
     
@@ -80,9 +78,9 @@ class ExtractOrderGmail:
             # 新しいデータの保存
             new_data.append({
                 'timestamp': start_time,
-                '約定数量': total_quantity,
-                '約定単価': weighted_average_price,
-                '損益' : total_earn
+                'quantity': total_quantity,
+                'price': weighted_average_price,
+                'pl' : total_earn
             })
             # 次の開始点を更新
             i += len(temp_df)

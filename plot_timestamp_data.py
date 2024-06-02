@@ -36,10 +36,16 @@ class GetPlotObjTimeStamp:
             # other_data_listの各data  [x,y, args]
             try:
                 for other_data in self.other_data_list:
-                    x,y,args = other_data
-                    ax.scatter(x, y, **args)
-                    for i, (xi, yi) in enumerate(zip(x, y)):
-                        ax.text(xi, yi, f' {i}', color='red', fontsize=9, ha='left', va='center')
+                    other_df, other_args = other_data
+                    mask_other = (other_df.index >= start_time) & (other_df.index <= end_time)
+                    other_sub_df = other_df.loc[mask_other] 
+                    ax.scatter(other_sub_df.index, other_sub_df['price'], **other_args)
+                    for i, (xi, yi) in enumerate(zip(other_sub_df.index, other_sub_df['price'])):
+                        if 'exit' in other_args['label']:
+                            ax.text(xi, yi, f' {i}:{other_sub_df.loc[xi, "pl"]}', color='red', fontsize=9, ha='center', va='bottom')
+                        else:
+                            ax.text(xi, yi, f' {i}', color='red', fontsize=9, ha='left', va='center')
+                            
             except:
                 handle_exception()
                 raise      

@@ -67,7 +67,7 @@ def get_plot_object_timestamp():
         ticks_df = ticks_obj.df
         
         start_time = pd.to_datetime('2024-05-30 09:00:00.000000')
-        end_time = pd.to_datetime('2024-05-30 12:00:00.000000')
+        end_time = pd.to_datetime('2024-05-30 10:00:00.000000')
         gmail_obj = ExtractOrderGmail()
         other_draw_data_list = gmail_obj.get_other_data_list(code, start_time, end_time, plot_lib="matplot")
         

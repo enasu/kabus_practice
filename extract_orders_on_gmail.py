@@ -26,8 +26,9 @@ class ExtractOrderGmail:
         new_df['年月日']=new_df['日時'].dt.date
         new_df['時間']=new_df['日時'].dt.time
         new_df.set_index('日時', inplace=True)
+        df_sorted = new_df.sort_index()
         
-        self.df = new_df
+        self.df = df_sorted
     
     def get_other_data_list(self, code, entry_time, exit_time, plot_lib = 'matplot'):
     #   plot_lib は mplfinance :'mpf' か matplot matplot 
@@ -39,9 +40,9 @@ class ExtractOrderGmail:
         
         type_dict_list = [
                 {'trade_type':'信用新規買い',
-                    'args':{'type': 'scatter', 'color': 'blue', 'marker':'^','zorder':5, 'label':'entry buy'}},
+                    'args':{'type': 'scatter', 'color': 'orange', 'marker':'^','zorder':5, 'label':'entry buy'}},
                 {'trade_type':'信用返済売り',
-                    'args':{'type': 'scatter', 'color': 'blue', 'marker':'v','zorder':5, 'label':'exit sale'}},
+                    'args':{'type': 'scatter', 'color': 'orange', 'marker':'v','zorder':5, 'label':'exit sale'}},
                 {'trade_type':'信用新規売り',
                     'args':{'type': 'scatter', 'color': 'yellow', 'marker':'^','zorder':5,'label':'entry sale'}},
                 {'trade_type':'信用返済買い',
@@ -53,17 +54,45 @@ class ExtractOrderGmail:
                 # plot_lib == 'mpf'は削除
         for type_dict in type_dict_list:
             trade_type = type_dict.get('trade_type')
-            df = f_df[f_df['取引種類'] == trade_type]
-            type_dict['column_name'] = '約定単価'
+            tmpdf = f_df[f_df['取引種類'] == trade_type]
+            df = self._resample_df(tmpdf)
             plot_args = type_dict['args']
-            type_dict['plot_type'] = plot_args['type']   #matplot は argsにtypeを持たない
             del plot_args['type']
-
+       
             x = df.index
             y = df['約定単価']
             other_data_list.append([x, y, plot_args])
 
         return other_data_list
+    
+    def _resample_df(self, df):
+        new_data=[]
+        i = 0
+        while i < len(df):
+            start_time = df.index[i]
+            end_time = start_time + pd.Timedelta(seconds=5) #5秒内を集計
+                # 2秒以内のデータを選択
+            temp_df = df[(df.index >= start_time) & (df.index <= end_time)]
+            # 加重平均単価の計算
+            total_quantity = temp_df['約定数量'].sum()
+            weighted_average_price = (temp_df['約定単価'] * temp_df['約定数量']).sum() / total_quantity if total_quantity != 0 else 0
+            total_earn = temp_df['損益'].sum()
+            # 新しいデータの保存
+            new_data.append({
+                'timestamp': start_time,
+                '約定数量': total_quantity,
+                '約定単価': weighted_average_price,
+                '損益' : total_earn
+            })
+            # 次の開始点を更新
+            i += len(temp_df)
+        # 新しいDataFrameを作成
+        new_df = pd.DataFrame(new_data)
+        new_df.set_index('timestamp',inplace=True)
+        df_sorted = new_df.sort_index()
+        
+        return df_sorted
+
 
 
         

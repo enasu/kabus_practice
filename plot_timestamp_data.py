@@ -29,7 +29,7 @@ class GetPlotObjTimeStamp:
         mask_main = (self.main_df.index >= start_time) & (self.main_df.index <= end_time)
         self.main_subset_df = self.main_df.loc[mask_main]
         
-        fig, ax = plt.subplots(figsize=(20, 10))
+        fig, ax = plt.subplots(figsize=(25, 10))
         ax.plot(self.main_subset_df.index, self.main_subset_df['price'], marker='o', label='Price')
 
         # other draw_list の期間を変更
@@ -37,12 +37,19 @@ class GetPlotObjTimeStamp:
             # other_data_listの各data  [x,y, args]
             try:
                 for other_data in self.other_data_list:
-                    ax.scatter(other_data[0], other_data[1], **other_data[2])
+                    x,y,args = other_data
+                    ax.scatter(x, y, **args)
+                    for i, (xi, yi) in enumerate(zip(x, y)):
+                        ax.text(xi, yi, f' {i}', color='red', fontsize=9, ha='left', va='center')
             except:
                 handle_exception()
                 raise      
         plt.legend()
         plt.show()
+        
+    def continuous_display_within_period(self, start_time_end_time, interval):
+        pass
+    
         
         
 if __name__ == '__main__':

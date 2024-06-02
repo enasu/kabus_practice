@@ -2,6 +2,7 @@ from ticks_handle import TicksJsonFileInfo, TicksInsertToMongo, TicksReadFromJso
                         TicksInsertHandler
 from utility import DateTimeParser, print_dict_structure, handle_exception
 
+
 def test_ticks_json_file_info(file_obj):
     
     print(f'self.files : {file_obj.files}')
@@ -46,22 +47,24 @@ def test_ticks_insert_handler():
         # Todo mongodbにインサートする部分と file を取得する部分があるので　それぞれのmockを作るまで実行しない
 
 
-def test_ticks_takeout_handler():
-    takeout_obj = TicksExtractHandler()
+def test_ticks_extract_handler():
+    ticks_obj = TicksExtractHandler()
     code_str ='9509'
     try:
-        takeout_obj.exec(code_str)
+        ticks_obj.exec(code_str)
     except:
         handle_exception()
     print('--------------TicksExtractHandler def exec のテスト---------------')
-    print(f'df head(2): {takeout_obj.df.head(2)}')   
+    print(f'df head(2): {ticks_obj.df.head(2)}') 
+    return ticks_obj.df
+    
     
 
 if __name__ == '__main__':
     # file_obj = TicksJsonFileInfo()
     # test_ticks_json_file_info(file_obj)
     # test_ticks_insert_to_monogo(file_obj)
-    test_ticks_takeout_handler()
+    test_ticks_extract_handler()
     
     
     

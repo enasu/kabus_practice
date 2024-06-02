@@ -26,7 +26,7 @@ def fixture_date_set():
         return setups
 
 
-def plot_drow_obj(drow_obj):
+def plot_draw_obj(draw_obj):
         plt.figure(figsize=(20,8))
-        drow_obj
+        draw_obj
         plt.show()

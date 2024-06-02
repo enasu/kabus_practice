@@ -29,25 +29,25 @@ class ExtractOrderGmail:
         
         self.df = new_df
     
-    def get_drow_obj_list(self, code, entry_time, exit_time, plot_lib = 'matplot'):
+    def get_other_data_list(self, code, entry_time, exit_time, plot_lib = 'matplot'):
     #   plot_lib は mplfinance :'mpf' か matplot matplot 
 
-        print('---------------get_drow_obj_list---------------------')
+        print('---------------get_other_data_list---------------------')
         print(f'self.df.index(0) >>>{self.df.index[0]}  --- entry_time >>> {entry_time}')
 
         f_df =  self.df[(self.df.index >= entry_time) & (self.df.index <= exit_time) & (self.df['銘柄CD']==str(code)) ]
         
         type_dict_list = [
                 {'trade_type':'信用新規買い',
-                    'args':{'type': 'scatter', 'color': 'blue', 'marker':'^', 's':100,'zorder':5, 'label':'entry buy'}},
+                    'args':{'type': 'scatter', 'color': 'blue', 'marker':'^','zorder':5, 'label':'entry buy'}},
                 {'trade_type':'信用返済売り',
-                    'args':{'type': 'scatter', 'color': 'blue', 'marker':'v', 's':100,'zorder':5, 'label':'exit sale'}},
+                    'args':{'type': 'scatter', 'color': 'blue', 'marker':'v','zorder':5, 'label':'exit sale'}},
                 {'trade_type':'信用新規売り',
-                    'args':{'type': 'scatter', 'color': 'yellow', 'marker':'^', 's':100,'zorder':5,'label':'entry sale'}},
+                    'args':{'type': 'scatter', 'color': 'yellow', 'marker':'^','zorder':5,'label':'entry sale'}},
                 {'trade_type':'信用返済買い',
-                    'args':{'type': 'scatter', 'color': 'yellow', 'marker':'v', 's':100,'zorder':5,'label':'exit buy'}},
+                    'args':{'type': 'scatter', 'color': 'yellow', 'marker':'v','zorder':5,'label':'exit buy'}},
                 ]
-        drow_obj_list = []
+        other_data_list = []
                 # ローソク足の場合は、indextimestampだと x,y size が違うとエラーがでるので現状使えない
                 # ローソク足と同じ時間軸にできないか検討する　⇒　同じローソク足の中に複数の値を描画できない
                 # plot_lib == 'mpf'は削除
@@ -61,10 +61,9 @@ class ExtractOrderGmail:
 
             x = df.index
             y = df['約定単価']
-            
-            drow_obj_list.append(plt.scatter(x, y, **plot_args))
+            other_data_list.append([x, y, plot_args])
 
-        return drow_obj_list
+        return other_data_list
 
 
         

@@ -1,5 +1,5 @@
 from extract_orders_on_gmail import ExtractOrderGmail
-from test.fixture import fixture_date_set, plot_df_test, plot_drow_obj
+from test.fixture import fixture_date_set, plot_df_test, plot_draw_obj
 from utility import DateTimeParser
 from datetime import datetime as dt
 import datetime
@@ -23,22 +23,22 @@ def get_mfp_obj_order_gmail(code, entry_time, exit_time):
     # print(f'-----------------f_df -----------------')
     # print(f_df.head(2))
     
-    drow_obj_list = gmail_obj.get_drow_obj_list(code, entry_time, exit_time, plot_lib='mpf')
+    draw_obj_list = gmail_obj.get_other_data_list(code, entry_time, exit_time, plot_lib='mpf')
     print('--------------- test_extract_order ----------------')
-    print(f'  drow_obj_list  >>> {type(  drow_obj_list )}')
-    print(f'  drow_obj_list [0]のtype >>> {type(  drow_obj_list [0])}')
+    print(f'  draw_obj_list  >>> {type(  draw_obj_list )}')
+    print(f'  draw_obj_list [0]のtype >>> {type(  draw_obj_list [0])}')
     #print(f'dict_list[0] >>> {dict_list[0]}')
     #pprint.pprint(dict_list)
     
     # plot_testに利用する
-    return drow_obj_list
+    return draw_obj_list
 
-def test_et_drow_obj_list(code, entry_time, exit_time):
+def test_et_draw_obj_list(code, entry_time, exit_time):
     gmail_obj =ExtractOrderGmail()
-    drow_obj_list = gmail_obj.get_drow_obj_list(code, entry_time, exit_time, plot_lib='matplot')
-    for drow_obj in drow_obj_list:
+    draw_obj_list = gmail_obj.get_other_data_list(code, entry_time, exit_time, plot_lib='matplot')
+    for draw_obj in draw_obj_list:
         
-        plot_drow_obj(drow_obj)
+        plot_draw_obj(draw_obj)
 
 
 
@@ -59,4 +59,4 @@ if __name__ == '__main__':
     #get_mfp_obj_order_gmail(code, entry_time, exit_time)
     
     # scatter図の描写　addplot用のデータ gmailからの order を想定
-    test_et_drow_obj_list(code, entry_time, exit_time)
+    test_et_draw_obj_list(code, entry_time, exit_time)

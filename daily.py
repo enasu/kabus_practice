@@ -1,17 +1,18 @@
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, time
 from kabusapi import KabustationApi
 from ticks_handle import TicksInsertHandler
 from mongodb import MongoDBManager
 from get_gmail import FetchOrderFromGmailApiHandler
 from utility import time_it, DateTimeParser, handle_exception
+import pdb
     
-@time_it
-def insert_kabusapi_order(today_microsec):
+
+def insert_kabusapi_order(date_time_str):
     try:
         params={
             'product': "0" ,
-            'updtime': today_microsec,
-            'state':"5"
+            'updtime':int(date_time_str),
+            'state':"5" 
         }
         kabustation_api = KabustationApi(stage='honban')
         api_datas = kabustation_api.fetch_orders(params=params)
@@ -21,6 +22,25 @@ def insert_kabusapi_order(today_microsec):
         kabusdb.insert_upsert(api_datas, upsert_key)
     except Exception:
         handle_exception()
+        
+@time_it
+def insert_kabusapi_order_simple(date_time_str):
+    try:
+        params={
+            'product': "0" ,
+            'updtime': int(date_time_str),
+            'state':"5",
+            'details':  'false'
+        }
+        kabustation_api = KabustationApi(stage='honban')
+        api_datas = kabustation_api.fetch_orders(params=params)
+        kabusdb = MongoDBManager('stock_kabu',collection_name='orders_simple')
+        # アップサートのキーを定義
+        upsert_key = ['ID']
+        kabusdb.insert_upsert(api_datas, upsert_key)
+    except Exception:
+        handle_exception()
+        
 @time_it
 def insert_gmail_order(today_str):
     try:
@@ -46,16 +66,23 @@ def insert_ticks(yesterday):
 
 
 if __name__ == '__main__':  
-    # 現在の日付と時刻
+
+    # 現在の日時を取得
     dt_now = datetime.now()
-    today_str = dt_now.strftime('%Y%m%d')
-    date_time_str = dt_now.strftime('%Y%m%d%H%M%S')
-    today_microsec = int(dt_now.timestamp() * 1_000_000)
-    yesterday = dt_now - timedelta(days=1)
+    # 当日の午前0時を取得
+    today = datetime.combine(dt_now.date(), time.min)
+    today_str = today.strftime('%Y%m%d')
+    date_time_str = today.strftime('%Y%m%d%H%M%S')  # 日付と時刻をYYMMDDHHMMSS形式で
+    today_microsec = int(today.timestamp() * 1_000_000)
+
+    # 昨日の午前0時を取得
+    yesterday = today - timedelta(days=1)
     yesterday_str = yesterday.strftime('%Y%m%d')
+    yesterday_datetime_str = yesterday.strftime('%Y%m%d%H%M%S')
     
     # kabustationからorder情報を mongodbへ保存
-    insert_kabusapi_order(date_time_str)
+    #insert_kabusapi_order(date_time_str)
+    #insert_kabusapi_order_simple(date_time_str)
     
     # gmailから order情報をmongodbへ保存
     insert_gmail_order(today_str)

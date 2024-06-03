@@ -4,10 +4,8 @@ import re
 import glob
 import pandas as pd
 from datetime import timedelta, datetime
-from pymongo import MongoClient, ASCENDING, UpdateOne
 from mongodb import MongoDBManager
 from  utility import time_it, DateTimeParser
-import pdb
 
 
 class TicksJsonFileInfo:

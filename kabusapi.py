@@ -131,6 +131,7 @@ def reg_symbols(stage='test'):
     response = api.register_symbols(symbols)
     print(response)
 
+#--------------------------------------------------------------------------
 @time_it
 def fetch_orders(updtime,stage='test'):
     params = { 
@@ -139,7 +140,6 @@ def fetch_orders(updtime,stage='test'):
               }
     api = KabustationApi(stage= stage)
     data = api.fetch_orders(params=params)
-
 
 
 def unregister_all(stage='test'):

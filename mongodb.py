@@ -34,7 +34,7 @@ class MongoDBManager:
         except Exception:
             handle_exception()
     
-    @time_it
+    #@time_it
     def insert_upsert(self, datas, upsert_key):
         # upsert_keyは、リストで取得 ex ['ID', 'user']         
         bulk_operations = []            # バルク操作のためのリストを初期化

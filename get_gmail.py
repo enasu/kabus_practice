@@ -176,8 +176,8 @@ class FetchOrderFromGmailApiHandler:
 
 
 if __name__ == '__main__':
-    start_datetime = '20240524 00:00:00'
-    end_datetime = '20240524 15:30:00'
+    start_datetime = '20240531 00:00:00'
+    end_datetime = '20240531 15:30:00'
     gmail_handler = FetchOrderFromGmailApiHandler()
     gmail_handler.add_datetime_to_query(start_datetime,end_datetime)
     gmail_handler.exec()

@@ -1,6 +1,4 @@
 from mongodb import MongoDBManager
-import matplotlib.pyplot as plt
-import mplfinance as mpf
 import pandas as pd
 import pdb
 
@@ -81,6 +79,7 @@ class ExtractOrderGmail:
                 'quantity': total_quantity,
                 'price': weighted_average_price,
                 'pl' : total_earn
+
             })
             # 次の開始点を更新
             i += len(temp_df)

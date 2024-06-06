@@ -44,8 +44,8 @@ class TestPlotObjTimestamp:
         code=9509
         ticks_obj = TicksExtractHandler()
         ticks_obj.exec(str(code))
-        self.start_time = pd.to_datetime('2024-05-31 09:00:00.000000')
-        self.end_time = pd.to_datetime('2024-05-31 15:00:00.000000')
+        self.start_time = pd.to_datetime('2024-06-06 09:00:00.000000')
+        self.end_time = pd.to_datetime('2024-06-06 15:00:00.000000')
         self.gmail_obj = ExtractOrderGmail()
         other_draw_data_list = self.gmail_obj.get_other_data_list(code, self.start_time, self.end_time, plot_lib="matplot")
         self.plot_obj = GetPlotObjTimeStamp(ticks_obj.df, other_draw_data_list)

@@ -3,7 +3,7 @@ from googleapiclient.errors import HttpError
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
-from get_gmail import GmailApi
+from fetch_gmail import GmailApi
 from mongodb import MongoDBManager
 from utility import time_it, DateTimeParser
 import pdb

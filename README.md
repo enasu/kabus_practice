@@ -1,0 +1,3 @@
+kabuステーションAPIの利用、BRiSKIから取得した歩み値を利用、GmailAPIを利用して 約定データの取得などなど色々試してみる
+WSL上のDocker Container 上で動く。
+KAbuステーションの Push APIは WSL上では動かない？のか　コネクションを確立できない。

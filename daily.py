@@ -85,11 +85,11 @@ if __name__ == '__main__':
     
     
     # kabustationからorder情報を mongodbへ保存
-    #insert_kabusapi_order(date_time_str)
+    insert_kabusapi_order(date_time_str)
     #insert_kabusapi_order_simple(date_time_str)
     
     # gmailから order情報をmongodbへ保存
-    #insert_gmail_order(today_str)
+    insert_gmail_order(today_str)
     
     # Briskから取得した歩み値をmongodbへ保存
     insert_ticks(yesterday_str)

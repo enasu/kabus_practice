@@ -2,6 +2,7 @@ import os
 import sys
 import pickle
 import base64
+from datetime import datetime
 import re
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
@@ -108,8 +109,9 @@ class Parse_email_content_orders:
         match = re.search(pattern, html_content, re.DOTALL)
         if match:
             details = match.group(1).split('<br/>')
-            # 日時
-            data['日時'] = details[0].strip()
+            # ! 修正した 日時
+            datetime_str = details[0].strip()
+            data['日時'] = datetime.strptime(datetime_str, '%Y/%m/%d %H:%M:%S')
             # CXJ9509／北海道電力
             market_info = details[1].strip()
             market_parts = market_info.split('／')
@@ -136,7 +138,7 @@ class Parse_email_content_orders:
 class FetchOrderFromGmailApiHandler:
     def __init__(self):
         db_name = 'stock_kabu'
-        self.db_orders = MongoDBManager(db_name, 'orders_on_gmail')
+        self.db_orders = MongoDBManager(db_name, 'orders_on_gmail_new')
         self.db_html = MongoDBManager(db_name, 'orders_html')
         self.query ='from:support@kabu.com subject:"【auKabucom】約定通知 "'
         self.parse_obj = Parse_email_content_orders()
@@ -176,8 +178,8 @@ class FetchOrderFromGmailApiHandler:
 
 
 if __name__ == '__main__':
-    start_datetime = '20240531 00:00:00'
-    end_datetime = '20240531 15:30:00'
+    start_datetime = '20240201 00:00:00'
+    end_datetime = '20240612 15:30:00'
     gmail_handler = FetchOrderFromGmailApiHandler()
     gmail_handler.add_datetime_to_query(start_datetime,end_datetime)
     gmail_handler.exec()

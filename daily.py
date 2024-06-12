@@ -54,7 +54,7 @@ def plot_timestamp(code, start_time, end_time):
     ticks_obj = TicksExtractHandler()
     ticks_obj.exec(str(code))
     gmail_obj = ExtractOrderGmail()
-    other_draw_data_list = gmail_obj.get_other_data_list(code, start_time, end_time, plot_lib="matplot")
+    other_draw_data_list = gmail_obj.get_orderdata_by_symbol(code, start_time, end_time, plot_lib="matplot")
     plot_obj = GetPlotObjTimeStamp(ticks_obj.df, other_draw_data_list)
     plot_obj.get_plot(start_time, end_time)
     interval = pd.Timedelta(minutes=60)

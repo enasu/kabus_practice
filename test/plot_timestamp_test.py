@@ -25,7 +25,7 @@ def get_plot_object_timestamp():
     start_time = pd.to_datetime('2024-05-30 09:00:00.000000')
     end_time = pd.to_datetime('2024-05-30 15:00:00.000000')
     gmail_obj = ExtractOrderGmail()
-    other_draw_data_list = gmail_obj.get_other_data_list(code, start_time, end_time, plot_lib="matplot")
+    other_draw_data_list = gmail_obj.get_orderdata_by_symbol(code, start_time, end_time, plot_lib="matplot")
     
     plot_obj = GetPlotObjTimeStamp(ticks_df, other_draw_data_list)
     plot_obj.get_plot(start_time, end_time)
@@ -47,7 +47,7 @@ class TestPlotObjTimestamp:
         self.start_time = pd.to_datetime('2024-06-06 09:00:00.000000')
         self.end_time = pd.to_datetime('2024-06-06 15:00:00.000000')
         self.gmail_obj = ExtractOrderGmail()
-        other_draw_data_list = self.gmail_obj.get_other_data_list(code, self.start_time, self.end_time, plot_lib="matplot")
+        other_draw_data_list = self.gmail_obj.get_orderdata_by_symbol(code, self.start_time, self.end_time, plot_lib="matplot")
         self.plot_obj = GetPlotObjTimeStamp(ticks_obj.df, other_draw_data_list)
         
     def test_get_plot(self):

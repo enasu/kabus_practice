@@ -23,7 +23,7 @@ def get_mfp_obj_order_gmail(code, entry_time, exit_time):
     # print(f'-----------------f_df -----------------')
     # print(f_df.head(2))
     
-    draw_obj_list = gmail_obj.get_other_data_list(code, entry_time, exit_time, plot_lib='mpf')
+    draw_obj_list = gmail_obj.get_orderdata_by_symbol(code, entry_time, exit_time, plot_lib='mpf')
     print('--------------- test_extract_order ----------------')
     print(f'  draw_obj_list  >>> {type(  draw_obj_list )}')
     print(f'  draw_obj_list [0]のtype >>> {type(  draw_obj_list [0])}')
@@ -35,7 +35,7 @@ def get_mfp_obj_order_gmail(code, entry_time, exit_time):
 
 def test_et_draw_obj_list(code, entry_time, exit_time):
     gmail_obj =ExtractOrderGmail()
-    draw_obj_list = gmail_obj.get_other_data_list(code, entry_time, exit_time, plot_lib='matplot')
+    draw_obj_list = gmail_obj.get_orderdata_by_symbol(code, entry_time, exit_time, plot_lib='matplot')
     for draw_obj in draw_obj_list:
         
         plot_draw_obj(draw_obj)

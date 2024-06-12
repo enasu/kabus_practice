@@ -38,7 +38,7 @@ def test_plot_step_value():
                         
                         # other data を追加
                         
-                        orher_data_draw_obj_list = gmail_obj.get_other_data_list(code, enter_time, exit_time,plot_lib='mpf')
+                        orher_data_draw_obj_list = gmail_obj.get_orderdata_by_symbol(code, enter_time, exit_time,plot_lib='mpf')
                         pdb.set_trace()
                         plot_obj = PlotStepValue(filtered_df, interval, time_unit, orher_data_draw_obj_list)
 

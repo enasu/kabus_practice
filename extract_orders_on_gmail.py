@@ -3,13 +3,15 @@ import pandas as pd
 import pdb
 
 class ExtractOrderGmail:
-    def __init__(self):
+    def __init__(self, period_dict=None):
         # mongodbから rodersongmaiを取り出す
+        # period_dict {"biginning":  ,"end": }
         db_name = 'stock_kabu'
         db = MongoDBManager(db_name, 'orders_on_gmail')
         self.df = db.convert_pandas()
         self._format_df()
 
+    # コードを事前に指定している前提
     def _format_df(self):
         new_df= self.df[['日時','銘柄CD','銘柄','取引種類','約定単価','約定数量','支払金額','受取金額']].copy()
         # `支払金額` 列から '円' とカンマを取り除き、整数型に変換
@@ -28,10 +30,11 @@ class ExtractOrderGmail:
         
         self.df = df_sorted
     
-    def get_other_data_list(self, code, entry_time, exit_time, plot_lib = 'matplot'):
+    #   歩み値のプロットに重ねる　売買データを作成
+    def get_orderdata_by_symbol(self, code, entry_time, exit_time, plot_lib = 'matplot'):
     #   plot_lib は mplfinance :'mpf' か matplot matplot 
 
-        print('---------------get_other_data_list---------------------')
+        print('---------------get_orderdata_by_symbol---------------------')
         print(f'self.df.index(0) >>>{self.df.index[0]}  --- entry_time >>> {entry_time}')
 
         f_df =  self.df[(self.df.index >= entry_time) & (self.df.index <= exit_time) & (self.df['銘柄CD']==str(code)) ]
@@ -89,6 +92,7 @@ class ExtractOrderGmail:
         df_sorted = new_df.sort_index()
         
         return df_sorted
+
 
 
 

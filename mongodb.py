@@ -2,7 +2,7 @@ from pymongo import MongoClient, UpdateOne
 import os
 import time
 import pandas as pd
-from utility import time_it, handle_exception
+from utility import time_it, handle_exception, DateTimeParser
 import pdb
 
 class MongoDBManager:
@@ -128,4 +128,15 @@ class InsertBatch:
     def use_insert_batch_flush(self):
         if self.datas:
             self.db.insert_batch(self.datas)
+            
+
+class FilterMaker:
+    def __init__(self):
+        pass
+    
+    def dailyperiod(self, date_str):
+        biginning = DateTimeParser(date_str + ' ' + '09:00:00')
+        end = DateTimeParser(date_str + ' ' + '15:00:00')
+        period_dict = {}
+        
     

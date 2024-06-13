@@ -138,7 +138,7 @@ class Parse_email_content_orders:
 class FetchOrderFromGmailApiHandler:
     def __init__(self):
         db_name = 'stock_kabu'
-        self.db_orders = MongoDBManager(db_name, 'orders_on_gmail_new')
+        self.db_orders = MongoDBManager(db_name, 'orders_on_gmail')
         self.db_html = MongoDBManager(db_name, 'orders_html')
         self.query ='from:support@kabu.com subject:"【auKabucom】約定通知 "'
         self.parse_obj = Parse_email_content_orders()

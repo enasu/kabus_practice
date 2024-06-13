@@ -5,8 +5,9 @@ import pdb
 class ExtractOrderGmail:
     def __init__(self, period_dict=None):
         # mongodbから rodersongmaiを取り出す
-        # period_dict {"biginning":  ,"end": }
+        # period_dict {"biginning":  ,"end": }value はdatetime オブヘクト
         db_name = 'stock_kabu'
+        # TODO コレクション名を一時変更している
         db = MongoDBManager(db_name, 'orders_on_gmail')
         self.df = db.convert_pandas()
         self._format_df()
@@ -22,7 +23,8 @@ class ExtractOrderGmail:
         new_df['支払金額'] = new_df['支払金額'].str.replace('円', '').str.replace(',', '').fillna(0).astype(int)
         new_df['受取金額'] = new_df['受取金額'].str.replace('円', '').str.replace(',', '').fillna(0).astype(int)
         new_df['損益'] = new_df['受取金額'] + new_df['支払金額']
-        new_df['日時'] = pd.to_datetime(new_df['日時'], format='%Y/%m/%d %H:%M:%S')
+        # TODO 確認後削除
+        #new_df['日時'] = pd.to_datetime(new_df['日時'], format='%Y/%m/%d %H:%M:%S')
         new_df['年月日']=new_df['日時'].dt.date
         new_df['時間']=new_df['日時'].dt.time
         new_df.set_index('日時', inplace=True)

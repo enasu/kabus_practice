@@ -69,7 +69,6 @@ class ExtractOrderGmail:
        
             other_data_list.append([df, plot_args])
             
-        pdb.set_trace()
         return other_data_list
     
     def _resample_df(self, df):
@@ -97,7 +96,6 @@ class ExtractOrderGmail:
         # 新しいDataFrameを作成
         if new_data:
             new_df = pd.DataFrame(new_data)
-            pdb.set_trace()
             new_df.set_index('timestamp',inplace=True)
             df_sorted = new_df.sort_index()
             

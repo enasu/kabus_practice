@@ -5,7 +5,7 @@ from mongodb import MongoDBManager
 from fetch_gmail import FetchOrderFromGmailApiHandler
 from plot_timestamp_data import GetPlotObjTimeStamp
 from extract_orders_on_gmail import ExtractOrderGmail
-from utility import time_it, DateTimeParser, handle_exception
+from utility import time_it, DateTimeParser, PeriodFilterMaker , handle_exception
 import pandas as pd
 import pdb
     
@@ -50,15 +50,22 @@ def insert_ticks(yesterday):
     except Exception:
         handle_exception()
         
-def plot_timestamp(code, start_time, end_time):
+def plot_timestamp(start_time, end_time):
+    
+    fil={'日時': {'$gte':start_time ,'$lte': end_time}}
+    gmail_obj = ExtractOrderGmail(fil)
+    df = gmail_obj.df
+    codes = df['銘柄CD'].unique()
     ticks_obj = TicksExtractHandler()
-    ticks_obj.exec(str(code))
-    gmail_obj = ExtractOrderGmail()
-    other_draw_data_list = gmail_obj.get_orderdata_by_symbol(code, start_time, end_time, plot_lib="matplot")
-    plot_obj = GetPlotObjTimeStamp(ticks_obj.df, other_draw_data_list)
-    plot_obj.get_plot(start_time, end_time)
-    interval = pd.Timedelta(minutes=60)
-    plot_obj.continuous_display_within_period(start_time, end_time, interval)
+    
+    for code in codes:
+
+        ticks_obj.exec(str(code))
+        other_draw_data_list = gmail_obj.get_orderdata_by_symbol(code, start_time, end_time, plot_lib="matplot")
+        plot_obj = GetPlotObjTimeStamp( ticks_obj.df, other_draw_data_list)
+        plot_obj.get_plot(str(code), start_time, end_time)
+        interval = pd.Timedelta(minutes=60)
+        plot_obj.continuous_display_within_period(code, start_time, end_time, interval)
 
 
 if __name__ == '__main__':  
@@ -85,13 +92,13 @@ if __name__ == '__main__':
     
     
     # kabustationからorder情報を mongodbへ保存
-    insert_kabusapi_order(date_time_str)
+    #insert_kabusapi_order(date_time_str)
     #insert_kabusapi_order_simple(date_time_str)
     
     # gmailから order情報をmongodbへ保存
-    insert_gmail_order(today_str)
+    #insert_gmail_order(today_str)
     
     # Briskから取得した歩み値をmongodbへ保存
-    insert_ticks(yesterday_str)
-    code = 9509
-    plot_timestamp(code,start_time_pd, end_time_pd)
+    #insert_ticks(yesterday_str)
+  
+    plot_timestamp(start_time_pd, end_time_pd)

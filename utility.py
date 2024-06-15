@@ -3,6 +3,7 @@ from datetime import datetime
 import time
 import traceback
 import sys
+import pdb
 
 def time_it(func):
     def wrapper(*args, **kwargs):
@@ -68,6 +69,31 @@ class DateTimeParser:
         previous_day = self.date_std - timedelta(days=1)
         previous_day_str = previous_day.strftime(self.format)
         return DateTimeParser(previous_day_str)
+    
 
+class PeriodFilterMaker:
+    def __init__(self):
+        self.biginning = None   #DateTimeParser 
+        self.end = None
+        self.filter = None
+    
+    def _period_filter(self,  field_name, biginning_period, end_period):
+        filter = {field_name: {'$gte':biginning_period, '$lte': end_period}}
+        return filter
+    
+    def oneday_period(self, date_str):
+
+        self.biginning = DateTimeParser(date_str + ' ' + '09:00:00')
+        self.end = DateTimeParser(date_str + ' ' + '15:00:00')
+
+    def between_date(self, biginning_date_str, end_date_str):
+        self.biginning = DateTimeParser(biginning_date_str + ' ' + '09:00:00')
+        self.end = DateTimeParser(end_date_str + ' ' + '15:00:00')
+
+    def date_std(self, field_name):
+        return self._period_filter(field_name, self.biginning.date_std, self.end.date_std)
+    
+    def date_micro(self, field_name):
+        return self._period_filter(field_name, self.biginning.microsec, self.end.microsec)
 
  

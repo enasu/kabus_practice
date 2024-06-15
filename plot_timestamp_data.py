@@ -24,12 +24,16 @@ class GetPlotObjTimeStamp:
         self.other_subset_list = []
         #self.args = self._get_args()
         
-    def get_plot(self,start_time, end_time):
+    def get_plot(self, title_str, start_time, end_time):
         mask_main = (self.main_df.index >= start_time) & (self.main_df.index <= end_time)
         subset_df = self.main_df.loc[mask_main]
         
         fig, ax = plt.subplots(figsize=(25, 10))
         ax.plot(subset_df.index, subset_df['price'], marker='o', label='Price')
+        
+        # グラフのタイトルを設定
+        title = f"{title_str}  {start_time}>>{end_time}"
+        plt.title(title)  
 
         # other draw_list の期間を変更
         if self.other_data_list:
@@ -52,12 +56,12 @@ class GetPlotObjTimeStamp:
         plt.legend()
         plt.show()
         
-    def continuous_display_within_period(self, start_time, end_time, interval):
+    def continuous_display_within_period(self, code, start_time, end_time, interval):
         # 指定された間隔で連続的にプロットを表示
         current_time = start_time
-        while current_time <= end_time:
+        while current_time < end_time:
             next_time = min(current_time + interval, end_time)
-            self.get_plot(current_time, next_time)
+            self.get_plot(str(code), current_time, next_time)
             current_time += interval
     
         

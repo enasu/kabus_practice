@@ -3,13 +3,16 @@ import pandas as pd
 import pdb
 
 class ExtractOrderGmail:
-    def __init__(self, period_dict=None):
+    def __init__(self, filter=None):
         # mongodbから rodersongmaiを取り出す
         # period_dict {"biginning":  ,"end": }value はdatetime オブヘクト
         db_name = 'stock_kabu'
         # TODO コレクション名を一時変更している
         db = MongoDBManager(db_name, 'orders_on_gmail')
-        self.df = db.convert_pandas()
+        if filter:
+            self.df = db.convert_pandas(filter)
+        else:
+            self.df = db.convert_pandas()
         self._format_df()
 
     # コードを事前に指定している前提
@@ -59,11 +62,14 @@ class ExtractOrderGmail:
             trade_type = type_dict.get('trade_type')
             tmpdf = f_df[f_df['取引種類'] == trade_type]
             df = self._resample_df(tmpdf)
+            if df is None:
+                continue
             plot_args = type_dict['args']
             del plot_args['type']
        
             other_data_list.append([df, plot_args])
-
+            
+        pdb.set_trace()
         return other_data_list
     
     def _resample_df(self, df):
@@ -89,12 +95,15 @@ class ExtractOrderGmail:
             # 次の開始点を更新
             i += len(temp_df)
         # 新しいDataFrameを作成
-        new_df = pd.DataFrame(new_data)
-        new_df.set_index('timestamp',inplace=True)
-        df_sorted = new_df.sort_index()
-        
-        return df_sorted
-
+        if new_data:
+            new_df = pd.DataFrame(new_data)
+            pdb.set_trace()
+            new_df.set_index('timestamp',inplace=True)
+            df_sorted = new_df.sort_index()
+            
+            return df_sorted
+        else:
+            return None
 
 
 

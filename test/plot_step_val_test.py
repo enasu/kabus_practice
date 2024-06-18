@@ -3,7 +3,7 @@ from test.fixture import fixture_date_set
 from utility import DateTimeParser, handle_exception
 from extract_orders_on_gmail import ExtractOrderGmail
 from ticks_handle import TicksExtractHandler
-from plot_timestamp_data import GetPlotObjTimeStamp
+from plot_timestamp_data import PlotTimeStamp
 from extract_orders_on_gmail import ExtractOrderGmail
 from datetime import datetime as dt
 import datetime                         # from datetime import datetime とは別のモジュール　timeメッソッドを持っている

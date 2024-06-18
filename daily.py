@@ -3,7 +3,7 @@ from kabusapi import KabustationApi
 from ticks_handle import TicksExtractHandler, TicksInsertHandler
 from mongodb import MongoDBManager
 from fetch_gmail import FetchOrderFromGmailApiHandler
-from plot_timestamp_data import GetPlotObjTimeStamp
+from plot_timestamp_data import PlotTimeStamp
 from extract_orders_on_gmail import ExtractOrderGmail
 from utility import time_it, DateTimeParser, PeriodFilterMaker , handle_exception
 import pandas as pd
@@ -62,8 +62,8 @@ def plot_timestamp(start_time, end_time):
 
         ticks_obj.exec(str(code))
         other_draw_data_list = gmail_obj.get_orderdata_by_symbol(code, start_time, end_time, plot_lib="matplot")
-        plot_obj = GetPlotObjTimeStamp( ticks_obj.df, other_draw_data_list)
-        plot_obj.get_plot(str(code), start_time, end_time)
+        plot_obj = PlotTimeStamp( ticks_obj.df, other_draw_data_list)
+        plot_obj.plot(str(code), start_time, end_time)
         interval = pd.Timedelta(minutes=60)
         plot_obj.continuous_display_within_period(code, start_time, end_time, interval)
 

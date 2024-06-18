@@ -26,9 +26,9 @@ def test_plot_step_value():
                         time_unit = set_up.get('time_unit')
                         interval = set_up.get('interval')
                         enter_date = set_up.get('usedate')[0]
-                        enter_time = dt.combine(enter_date, datetime.time(8,59,0))
+                        enter_time = dt.combine(enter_date, datetime.time(9,0,0))
                         exit_date = set_up.get('usedate')[1]
-                        exit_time = dt.combine(exit_date, datetime.time(15,1,0))
+                        exit_time = dt.combine(exit_date, datetime.time(15,0,0))
                         
                         filtered_df = df[(df.index >= enter_time) & (df.index <= exit_time)]
                         print(f'set_up-{c} enter_date {enter_date}  == type{type(enter_date)}')
@@ -39,7 +39,7 @@ def test_plot_step_value():
                         # other data を追加
                         
                         orher_data_draw_obj_list = gmail_obj.get_orderdata_by_symbol(code, enter_time, exit_time,plot_lib='mpf')
-                        pdb.set_trace()
+
                         plot_obj = PlotStepValue(filtered_df, interval, time_unit, orher_data_draw_obj_list)
 
 

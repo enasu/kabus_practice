@@ -161,6 +161,7 @@ class TicksExtractHandler:
         self._read_from_mongo(code)
         self._format_df()
 
+
 class TicksReadFromJsonFile:
 
     def __init__(self):

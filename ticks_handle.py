@@ -127,7 +127,42 @@ class TicksInsertHandler:
         # insert_oneのhelper
         for c in len(self.files_data):
             print(f' {c-1}: {self.files_data}')
+            
+
+class FixTicksDB:
+    def __init__(self, db_name='kabu_ticks'):
+        self.db = MongoDBManager(db_name)
         
+    def delete_specific_date(self,specific_date):
+        """
+        特定の日付の全コレクションを削除
+        specific_date は 20240906 形式の文字列
+        """
+         # 引数で与えられた日付文字列から datetime オブジェクトを生成
+        target_date = datetime.strptime(specific_date, '%Y%m%d')  # '20240906' などの形式を想定
+
+        start_date = datetime(target_date.year, target_date.month, target_date.day)
+        end_date = start_date + timedelta(days=1)
+
+        # datetimeオブジェクトをミリ秒単位のタイムスタンプに変換
+        start_timestamp = int(start_date.timestamp() * 1000)
+        end_timestamp = int(end_date.timestamp() * 1000)
+
+        print(f"start_timestamp: {start_timestamp}     end_timestamp: {end_timestamp}")
+
+        # データベース内のすべてのコレクション名を取得
+        collections = self.db.list_collection_names()
+
+        # 各コレクションに対して削除クエリを実行
+        for collection_name in collections:
+            collection = self.db[collection_name]
+            result = collection.delete_many({
+                'timestamp': {
+                    '$gte': start_timestamp,
+                    '$lt': end_timestamp
+                }
+            })
+            print(f'Collection {collection_name}: Deleted {result.deleted_count} documents')
 
 class TicksExtractHandler:
     '''

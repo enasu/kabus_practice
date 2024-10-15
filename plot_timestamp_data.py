@@ -26,24 +26,24 @@ class BasePlotObj:
         return self.main_df.loc[mask_main]
 
     def plot(self, title_str, start_time, end_time):
-        self.title_str = title_str
         raise NotImplementedError("This method should be implemented by subclasses.")
 
     def continuous_display_within_period(self, start_time, end_time, interval):
         # 指定された間隔で連続的にプロットを表示
+        title_str = None    # self.title_str を更新しないため 
         current_time = start_time
         while current_time < end_time:
             next_time = min(current_time + interval, end_time)
-            self.plot(self.title_str, current_time, next_time)
+            self.plot(title_str, current_time, next_time)
             current_time += interval
-
 
 
 class PlotTimeStamp(BasePlotObj):
         
     def plot(self, title_str, start_time, end_time):
+        if title_str is not None:
+            self.title_str = title_str
         subset_df = self.get_time_filtered_data(start_time, end_time)
-        addplotdatas =[]
         
         fig, ax = plt.subplots(figsize=(25, 10))
         ax.plot(subset_df.index, subset_df['price'], marker='o', label='Price')
@@ -60,6 +60,10 @@ class PlotTimeStamp(BasePlotObj):
                     other_df, other_args = other_data
                     mask_other = (other_df.index >= start_time) & (other_df.index <= end_time)
                     other_sub_df = other_df.loc[mask_other] 
+                    
+                    if other_sub_df.empty:
+                        continue
+
                     ax.scatter(other_sub_df.index, other_sub_df['price'], **other_args)
                     for i, (xi, yi) in enumerate(zip(other_sub_df.index, other_sub_df['price'])):
                         if 'exit' in other_args['label']:
@@ -73,13 +77,15 @@ class PlotTimeStamp(BasePlotObj):
         plt.legend()
         plt.show()
         
-    # def continuous_display_within_period(self, code, start_time, end_time, interval):
-    #     # 指定された間隔で連続的にプロットを表示
-    #     current_time = start_time
-    #     while current_time < end_time:
-    #         next_time = min(current_time + interval, end_time)
-    #         self.plot(str(code), current_time, next_time)
-    #         current_time += interval
+
+class PlotStepVal(BasePlotObj):
+    def __init__(self, main_df, addplot_list =None):
+        super().__init__(main_df)
+        self.addplot_list = addplot_list or []
+    
+    def plot(self, title_str, start_time, end_time):
+        pass
+        
     
         
 

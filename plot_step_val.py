@@ -56,21 +56,18 @@ class PlotStepValue:
         'price': 'ohlc',
         'quantity':'sum'
        }
-        # 1分ごとにリサンプリングして OHLC データを計算
+        # リサンプリングして OHLC データを計算
         df_resampled = df.resample(self.interval_set).apply(ohlc_dict)
         # columns を修正
         df_resampled.columns = [ 'Open', 'High', 'Low', 'Close', 'Volume']
         #11時31分から12:29までのデータを削除
         if self.title_unit in ['Seconds','Minutes','hour']:
             df_resampled = self._remove_lunchtime(df_resampled)
-        
+        # 休日 時間外を削除
         df_resampled = self._remove_suspens_day(df_resampled)
-
         # 移動平均線を計算
-        df_resampled['SMA_5'] = df_resampled['Close'].rolling(window=5).mean()
-        df_resampled['SMA_24'] = df_resampled['Close'].rolling(window=24).mean()
-        df_resampled['SMA_60'] = df_resampled[ 'Close'].rolling(window=60).mean()
-        df_resampled['SMA_100'] = df_resampled[ 'Close'].rolling(window=100).mean()
+        for period in [5, 24, 60, 100]:
+            df_resampled[f'SMA_{period}'] = df_resampled['Close'].rolling(window=period).mean()
         return df_resampled
     
     def _remove_lunchtime(self,df_resampled):
@@ -107,7 +104,7 @@ class PlotStepValue:
           
     def _get_addplot_sma(self):
         # 利用可能なカラーマップから色を取得
-        cmap = plt.get_cmap("viridis")
+        cmap = plt.get_cmap("Accent")
         
         # "SMA_"で始まるカラムを見つける
         sma_columns = [col for col in self.df_resampled.columns if col.startswith('SMA_')]

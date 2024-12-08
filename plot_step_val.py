@@ -89,7 +89,7 @@ class PlotStepValue:
         df_convert = df_convert[
             (
                 (df_convert.index.time >= pd.to_datetime('9:00').time()) &
-                (df_convert.index.time <= pd.to_datetime('15:00').time())
+                (df_convert.index.time <= pd.to_datetime('15:30').time())
                 )]
         
         return df_convert

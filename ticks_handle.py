@@ -149,19 +149,29 @@ class FixTicksDB:
         end_timestamp = int(end_date.timestamp() * 1000)
 
         print(f"start_timestamp: {start_timestamp}     end_timestamp: {end_timestamp}")
+        
 
         # データベース内のすべてのコレクション名を取得
         collections = self.db.list_collection_names()
+        
+        
+        print(type(self.db))  # self.dbの型を確認
+        print(self.db)        # self.dbの内容を確認
+        print(collections)
+        
 
         # 各コレクションに対して削除クエリを実行
         for collection_name in collections:
+            # print(f'{collection_name} typeは {type(collection_name)}')  # エラー対応
             collection = self.db[collection_name]
-            result = collection.delete_many({
+            result = collection.delete_many(
+                {
                 'timestamp': {
                     '$gte': start_timestamp,
                     '$lt': end_timestamp
+                    }
                 }
-            })
+            )
             print(f'Collection {collection_name}: Deleted {result.deleted_count} documents')
 
 class TicksExtractHandler:

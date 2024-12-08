@@ -31,7 +31,7 @@ def insert_kabusapi_order(date_time_str):
 def insert_gmail_order(today_str):
     try:
         start_datetime_str = today_str + ' 00:00:00'
-        end_datetime_str = today_str + ' 15:10:00'
+        end_datetime_str = today_str + ' 15:35:00'
         print(f'gmail_startdate: {start_datetime_str},end_date: {end_datetime_str}')
         gmail_handler =FetchOrderFromGmailApiHandler()
         gmail_handler.add_datetime_to_query(start_datetime_str, end_datetime_str)
@@ -107,7 +107,7 @@ class DailyHandler:
         today_microsec = int(today.timestamp() * 1_000_000) # Ticks_data は当日の時間データだけなので、日付をひっつけて日時データとする
         # 当日の午前9時と午後3時を設定
         start_time = datetime.combine(dt_now.date(), time(9, 0))
-        end_time = datetime.combine(dt_now.date(), time(15, 0))
+        end_time = datetime.combine(dt_now.date(), time(15, 30))
         # pandasのdatetime形式で出力
         start_time_pd = pd.to_datetime(start_time)
         end_time_pd = pd.to_datetime(end_time)
@@ -131,7 +131,7 @@ if __name__ == '__main__':
     today_microsec = int(today.timestamp() * 1_000_000)
     # 当日の午前9時と午後3時を設定
     start_time = datetime.combine(dt_now.date(), time(9, 0))
-    end_time = datetime.combine(dt_now.date(), time(15, 0))
+    end_time = datetime.combine(dt_now.date(), time(15, 30))
     # pandasのdatetime形式で出力
     start_time_pd = pd.to_datetime(start_time)
     end_time_pd = pd.to_datetime(end_time)

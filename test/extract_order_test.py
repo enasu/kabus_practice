@@ -1,5 +1,5 @@
 from extract_orders_on_gmail import ExtractOrderGmail
-from test.fixture import fixture_date_set, plot_df_test, plot_draw_obj
+from test.fixture import fixture_date_set, plot_draw_obj
 from utility import DateTimeParser
 from datetime import datetime as dt
 import datetime

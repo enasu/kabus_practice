@@ -11,6 +11,7 @@ class MongoDBManager:
         self.client = MongoClient(f'mongodb://{self.MONGO_USER}:{self.MONGO_PW}@mongodb:27017/')
         self.db = self.client[db_name]
         self.collection = None
+        # collectionを一度に指定するために下で定義したメッソッドを呼び出す
         if collection_name:
             self.select_collection(collection_name) 
             self.start_count = self.collection.count_documents({})

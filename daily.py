@@ -144,14 +144,16 @@ if __name__ == '__main__':
     
     
     # kabustationからorder情報を mongodbへ保存
+    #
     insert_kabusapi_order(date_time_str)
-    #insert_kabusapi_order_simple(date_time_str)
+    
     
     # gmailから order情報をmongodbへ保存
     insert_gmail_order(today_str)
     
     # Briskから取得した歩み値をmongodbへ保存
         # 前日の値から今日の値を取得している
+    #
     insert_ticks(yesterday_str)
   
     #plot_timestamp(start_time_pd, end_time_pd)
